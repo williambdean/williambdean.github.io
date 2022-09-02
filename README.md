@@ -4,7 +4,7 @@ My name is Will Dean. My background is in Statistics and have been working as a 
 
 I enjoy working with geographical data. Most likely because it helps me forget about my [*Fernweh*](https://www.linguee.de/deutsch-englisch/search?source=auto&query=fernweh). I love to travel and figure out how the world works while talking to people in the process. 
 
-I am currently interested in exploring different Bayesian models, specifically with the library `PyMC`. I find the software fun to use and very helpful for the problems I solve. 
+I am currently interested in exploring different Bayesian models, specifically with the library `PyMC`. I find the software fun to use and very helpful for the problems I like to solve. 
 
 Some of my other favorite python software recently is: 
 - `PyYAML`
