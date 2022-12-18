@@ -1,4 +1,5 @@
 site_name: Will Dean
+site_url: https://wd60622.github.io/
 site_description: Personal Website for Will Dean
 
 theme: 
@@ -46,7 +47,7 @@ markdown_extensions:
   - pymdownx.emoji:
       emoji_index: !!python/name:materialx.emoji.twemoji
       emoji_generator: !!python/name:materialx.emoji.to_svg
-      
+
 extra: 
   social: 
     - icon: fontawesome/brands/github
