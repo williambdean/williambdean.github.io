@@ -56,6 +56,6 @@ Below are Settings section that worked for my deployment.
 
 I found these links helpful while setting up this site and writing this post.
 
-https://www.mkdocs.org/
-https://squidfunk.github.io/mkdocs-material/getting-started/
-https://pages.github.com/
+- [MkDocs](https://www.mkdocs.org/)
+- [MkDocs Material](https://squidfunk.github.io/mkdocs-material/getting-started/)
+- [GitHub Pages](https://pages.github.com/)
