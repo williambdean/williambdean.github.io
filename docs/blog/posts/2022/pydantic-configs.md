@@ -271,6 +271,163 @@ Find the gist of this [here](https://gist.github.com/wd60622/d8cc702f48e51d9a1e6
 
 Prefer [TOML Configs](https://toml.io/en/)? Can imagine similar support for TOML configs (especially with latest support in python 3.11). Same goes with some additional formats too.
 
+## Alternative Comparison
+
+I have an example where: 
+
+1. Some data will be loaded in
+2. Some model with configuration is loaded in
+3. The model is trained and saves:
+    1. Logging information
+    2. Trained model
+
+The three implementations will go from worst to best.
+
+### 1. Hard Coding Constants
+
+This is the worst case implementation since any changes happen to happen in the python file itself. 
+
+Not only that, but some of the hard-coded values are at the end of the file. That could be hard to sift through if it was a larger file!
+
+```python 
+from my_module import utils, model, data
+
+if __name__ == "__main__": 
+    df = data.load_data(
+        utils.RAW_DATA_DIR / "training-data.csv"
+    )
+
+    my_model_config = {
+        ...
+    }
+    my_model = model.MyModel(**my_model_config)
+    my_model.train(df)
+
+    my_model.save_logs(
+        utils.LOGGING_DIR / "logging.txt"
+    )
+
+    my_model.save_model(
+        utils.MODEL_DIR / "my-model.pkl"
+    )
+```
+
+### 2. Using Unstructured Configs
+
+This introduces a yaml config file which separates all the changing variables from the python file itself. However, it is not totally clear what are all the options available.
+
+I do think this is a large improvement though!
+
+```yaml title="config.yaml"
+training_data: training-data.csv
+model_config: 
+    folds: 5
+    random_seed: 42
+    ...
+logging_name: logging.txt
+model_name: my-model.pkl
+```
+
+```python 
+from typing import Dict, Any
+
+if __name__ == "__main__": 
+    config: Dict[str, Any] = utils.load_config("config.yaml")
+
+    df = data.load_data(
+        utils.RAW_DATA_DIR / config["training_data"]
+    )
+
+    my_model = model.MyModel(**config["model_config"])
+    my_model.train(df)
+
+    my_model.save_logs(
+        utils.LOGGING_DIR / config["logging_name"]
+    )
+
+    my_model.save_model(
+        utils.MODEL_DIR / config["model_name"]
+    )
+```
+
+### 3. Config with Pydantic
+
+This might be a way to implement with pydantic.
+
+```python title="my_module/config.py"
+from my_module import utils 
+
+
+class Source: 
+    training_data: str 
+    raw_data: Path = utils.RAW_DATA_DIR
+    
+    def load_data(self) -> pd.DataFrame: 
+        ...
+
+class ModelConfig(BaseModel): 
+    folds: int = 5
+    random_seed: int = 42
+
+    def slugify_config(self, file_base: Path) -> str: 
+        """Helper for file naming."""
+
+
+class Artifacts(BaseModel): 
+    logging_name: str 
+    model_name: str 
+    logging_dir: Path = utils.LOGGING_DIR
+    model_dir: Path = utils.MODEL_DIR
+
+    
+class Config(YamlBaseModel): 
+    training_source: Source
+    model_config: ModelConfig
+    model_artifacts: Artifacts 
+```
+
+```yaml title="config.yaml"
+training_source: 
+    training_data: training-data.csv
+model_config: 
+    folds: 10
+    random_seed: 1
+artifacts: 
+    logging_name: logging.txt
+    model_name: my-model.pkl
+```
+
+```python 
+
+if __name__ == "__main__": 
+    config: Config = Config.from_yaml("config.yaml")
+
+    df = config.source.load_data()
+
+    my_model = model.MyModel(config.model_config)
+    my_model.fit(df)
+
+    my_model.save_artifacts(
+        config.model_config, 
+        config.model_artifacts
+    )
+```
+
+This is clearly the most explicit version of the three. However, there are a lot of benefits for doing so. 
+
+1. Clearly defined configuration leads to: 
+    1. Known functionality from class definitions
+    2. Related functionality sticks together
+2. Shorter code in script because:
+    1. OOP structuring 
+    2. Ability to work with default values
+3. Able to be extended if desired like: 
+    1. Better file naming using config information
+
 ## Conclusion
+
+<div align="center">
+<a href="https://imgflip.com/i/74rroj"><img src="https://i.imgflip.com/74rroj.jpg" title="made at imgflip.com"/></a><div><a href="https://imgflip.com/memegenerator"></a></div>
+</div>
 
 Overall, I've found defining configs with pydantic in mind very useful. It can be super quick to do, provide a lot more structure and understanding to the config settings, and leverage the powerful parsing validation from the library. Give it a try!
