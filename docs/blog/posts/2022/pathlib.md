@@ -27,6 +27,22 @@ print(f"The file {data_file} exists: {os.path.isfile(data_file)}")
 
 ## Quick Start
 
+Using a `pathlib.Path` instance instead of a string is meant to be intuitive. 
+
+That is, many actions like creating file, checking stats, viewing parent folders, etc are just methods of a `Path` instance. 
+
+When working in a python file, the `__file__` variable can be utilized in order to find out where the current location is. No need to hard code or think about relative paths.
+
+```python title="current-file.py"
+HERE = Path(__file__).parent
+
+# New file next to "current-file.py"
+new_file = HERE / "new-file.txt"
+
+if not new_file.exists(): 
+    new_file.touch()
+```
+
 
 ## Using a data folder  
 
