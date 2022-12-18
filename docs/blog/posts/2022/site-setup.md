@@ -1,4 +1,4 @@
-# Creating this Site
+# GitHub Pages and Mkdocs
 
 This website was created using `MkDocs`, surrounding python libraries, and is served with GitHub pages. 
 

@@ -4,6 +4,7 @@ site_description: Personal Website for Will Dean
 
 repo_name: wd60622.github.io
 repo_url: https://github.com/wd60622/wd60622.github.io
+edit_uri: blob/main/docs/
 
 theme: 
   name: material
