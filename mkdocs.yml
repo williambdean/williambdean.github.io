@@ -35,8 +35,8 @@ plugins:
   - tags:
       tags_file: tags.md
   - markdownextradata
-  # - git-revision-date-localized: 
-  #     enable_creation_date: true
+  - git-revision-date-localized: 
+      enable_creation_date: true
   # - mkdocs-jupyter
 
 markdown_extensions:
@@ -63,6 +63,8 @@ nav:
   - Welcome: index.md
   - Blog: 
     - blog/index.md
+    - 2023: 
+      - blog/posts/2023/more-to-come.md
     - 2022: 
       - blog/posts/2022/pathlib.md
       - Pydantic for Configs: blog/posts/2022/pydantic-configs.md

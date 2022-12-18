@@ -17,4 +17,6 @@ As of late, I have been exploring python code design techniques to create easy-t
 
 I love to learn and collaborate so feel free to [connect with me](https://www.linkedin.com/in/williambdean/)! I've been looking into freelancing and have some options posted [here](https://www.fiverr.com/williamdean600?up_rollout=true) as well. 
 
+For information about how this site was created, checkout my [Blog Post here](blog/posts/2022/site-setup)
+
 

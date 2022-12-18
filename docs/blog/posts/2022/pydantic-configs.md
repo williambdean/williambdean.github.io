@@ -6,24 +6,24 @@ tags:
 
 # Using PyDantic for Configs
 
-I discovered the [pydantic library](https://docs.pydantic.dev/) when I first started using Typer and FastAPI and quickly found the library very useful for other reasons.
+I discovered the [pydantic library](https://docs.pydantic.dev/) when I first started using [Typer](https://typer.tiangolo.com/) and [FastAPI](https://fastapi.tiangolo.com/) and quickly found the library very useful for other reasons.
 
-One usecase I've found very helpful is when making config files for python scripts. 
+One use case I've found very helpful is when making config files for python scripts. 
 
 There is clear benefit to using configs when writing python code. i.e. you can change variables without having to edit the python file itself. But by also using pydantic you get the additional benefits provided from the library. 
 
 ## Clearly Define the Structure of the Config
 
-When working with configs, I often find it confusing to what all the possible supported settings are. However, if you define a pydantic basemodel, you see clear instructions for what you are working with. 
+When working with configs, I often find it confusing to what all the possible supported settings are. However, if you define a `Config` class from the `pydantic.BaseModel`, you see clear instructions for what you are working with. 
 
-For instance, a project which 
+For instance, a project which is working with some input, output, and some additional configuration settings might look like this.
 
 
 ```python
 from pydantic import BaseModel
 
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Any
 
 
 class Config(BaseModel):
@@ -32,13 +32,16 @@ class Config(BaseModel):
     # Result location and file name
     results_dir: Path
     results_file_name: str
-    plotting_kwargs: Dict
+    # Some additional configurations
+    plotting_kwargs: Dict[str, Any]
 
 ```
 
+Which would correspond to yaml configuration file like this:
+
 ```yaml title="config.yaml"
 input_location: ./data/input_data.csv
-results_dir: .
+results_dir: ./results/
 results_file_name: my_first_run.png
 plotting_kwargs: 
     alpha: 0.5
@@ -97,7 +100,11 @@ class Config(BaseModel):
 
 ```
 
+### Additional Validation
+
 Also just take advantage of all the added validation that pydantic provides. 
+
+This can be used for many 
 
 If you are used to using dataclasses too, the dataclasses submodule can be very helpful in order to add some additional checks on the configs at runtime.
 
@@ -120,6 +127,46 @@ class ResultSettings:
             msg = f"The results already exists. Not running {save_location}" 
             raise ValueError(msg)
 ```
+
+### Additional Functionality
+
+Since all of these configs items are python classes, additional functionality can be added to all of them. This add to the cohesion of the code, putting similiar methods together.
+
+For instance, if there is some type of connection settings, add additional functionality to their associated classes. 
+
+
+```python 
+import pandas as pd
+
+
+class DataBaseSettings(BaseModel): 
+    schema: str 
+    table: str 
+
+    def is_connected(self) -> bool: 
+        """Determine if connection exists."""
+
+    def read_table(self) -> pd.DataFrame: 
+        """Return the table from the database."""
+
+    
+class Config(BaseModel): 
+    database: DataBaseSettings
+```
+
+### Reusability
+
+If there are 
+
+```python 
+class RunConfig(BaseModel): 
+    input_settings: InputSettings
+
+
+
+```
+
+
 
 ## Class Implementation
 
@@ -145,10 +192,37 @@ class YamlBaseModel(BaseModel)
 
 ```
 
-This allows for easy construction of a con
+Then when defining a config file, this will be the class inherited from. Making it clear which define the structure of config files and which are just parts of a larger configuration.
+
+```python
+class ModelSettings(BaseModel): 
+    """Won't be a config file but will be part of some larger configuration."""
+    folds: int 
+    method: str
+    ...
+
+
+class RunConfig(YamlBaseModel):
+    """Some YAML config file will have this structure."""
+    input: InputSettings
+    model_settings: ModelSettings
+```
+
+This allows for easy construction of a config object and can be used accordingly.
+
+```python 
+
+if __name__ == "__main__": 
+    config = RunConfig.from_yaml("./config/run-config.yaml")
+
+    data = config.input.load_data()
+
+```
 
 Find the gist of this [here](https://gist.github.com/wd60622/d8cc702f48e51d9a1e687ca1b6b66212) with an additional example.
 
+Prefer [TOML Configs](https://toml.io/en/)? Can imagine similar support for TOML configs (especially with latest support in python 3.11).
+
 ## Conclusion
 
-Overall, I've found defining configs with pydantic in mind very useful
+Overall, I've found defining configs with pydantic in mind very useful. It can be super quick to do, keep 
