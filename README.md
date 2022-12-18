@@ -6,11 +6,12 @@ I enjoy working with geographical data. Most likely because it helps me forget a
 
 I am currently interested in exploring different Bayesian models, specifically with the library `PyMC`. I find the software fun to use and very helpful for the problems I like to solve. 
 
-Some of my other favorite python software recently is: 
+Some of my other favorite python software recently is:  
+
 - `PyYAML`
 - `rich`
 - `fastapi` / `typer` (big fan of all the creator's work)
-- `geopandas` 
+- `geopandas`
 
 As of late, I have been exploring python code design techniques to create easy-to-use APIs that can be easily extended. This [YouTube Channel](https://www.youtube.com/c/ArjanCodes) has been an inspiration for me. 
 
