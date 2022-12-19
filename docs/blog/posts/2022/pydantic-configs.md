@@ -2,6 +2,7 @@
 tags: 
     - Python
     - Config Files
+comments: true
 ---
 
 # Using PyDantic for Configs

@@ -2,6 +2,7 @@
 tags: 
     - Python
     - Documentation
+comments: true
 ---
 
 # MkDocs and GitHub Pages

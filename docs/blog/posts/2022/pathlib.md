@@ -2,6 +2,7 @@
 tags: 
     - Python
     - Standard Library
+comments: true
 ---
 
 # My Favorite Python builtin: pathlib
