@@ -20,4 +20,4 @@ I love to learn and collaborate so feel free to [connect with me](https://www.li
 For information about how this site was created, checkout my [Blog Post here](blog/posts/2022/site-setup).
 
 
-<img class="img" src="https://github-readme-stats.vercel.app/api?username=wd606622&show_icons=true&theme=transparent&count_private=true&include_all_commits=true" />
+<img class="img" src="https://github-readme-stats.vercel.app/api?username=wd60622&show_icons=true&theme=transparent&count_private=true&include_all_commits=true" />
