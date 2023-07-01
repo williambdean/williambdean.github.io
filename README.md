@@ -6,18 +6,6 @@ I enjoy working with geographical data. Most likely because it helps me forget a
 
 I am currently interested in exploring different Bayesian models, specifically with the library `PyMC`. I find the software fun to use and very helpful for the problems I like to solve. 
 
-Some of my other favorite python software recently is:  
-
-- `PyYAML`
-- `rich`
-- `fastapi` / `typer` (big fan of all the creator's work)
-- `geopandas`
-
-As of late, I have been exploring python code design techniques to create easy-to-use APIs that can be easily extended. This [YouTube Channel](https://www.youtube.com/c/ArjanCodes) has been an inspiration for me. 
-
 I love to learn and collaborate so feel free to [connect with me](https://www.linkedin.com/in/williambdean/)! I've been looking into freelancing and have some options posted [here](https://www.fiverr.com/williamdean600?up_rollout=true) as well. 
-
-For information about how this site was created, checkout my [Blog Post here](blog/posts/2022/site-setup).
-
 
 <img class="img" src="https://github-readme-stats.vercel.app/api?username=wd60622&show_icons=true&theme=transparent&count_private=true&include_all_commits=true" />
