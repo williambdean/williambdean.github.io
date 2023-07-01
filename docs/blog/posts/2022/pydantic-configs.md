@@ -5,7 +5,7 @@ tags:
 comments: true
 ---
 
-# Using PyDantic for Configs
+# Using Pydantic for Configs
 
 !!! tip 
     It might be helpful to know a bit about the pydantic library and its functionality. Luckily, the docs are very good. They are linked below.
