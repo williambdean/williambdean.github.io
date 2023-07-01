@@ -7,7 +7,7 @@ comments: true
 ---
 # Extending Pandas
 
-Here is a quick way to make your functionality on pandas objects just as common as using pandas itself and help promote readable code. 
+Here is a quick way to make your functionality with pandas objects just as common as using pandas itself and help promote readable code. 
 
 Our goal here is to make a function that can be used on a pandas object via a self defined attribute. 
 
@@ -100,7 +100,33 @@ def my_func(df: pd.DataFrame) -> pd.Series:
 df.boot.get_samples(b_func=my_func, B=100)
 ```
 
-Though is just a single method, this technique can be used to package up a lot of functionality. 
+Though is just a single method, this technique can be used to package up a lot of functionality.
+
+## Adding Validation
+
+The `BootAccessor` class can be extended to add validation to the DataFrame before the bootstrap is performed. This can be good for checking that the DataFrame has the correct columns or that the values are in the correct range -- or anything else for the use case.
+
+```python   
+@pd.api.extensions.register_dataframe_accessor("boot")
+class BootAccessor: 
+    def __init__(self, pandas_obj):
+        self._validate(pandas_obj)
+        self._obj = pandas_obj
+
+    @staticmethod
+    def _validation(df: pd.DataFrame) -> bool: 
+        """Validate DataFrame
+        
+        Args:
+            df (pd.DataFrame): DataFrame to validate
+        
+        Returns:
+            bool: True if DataFrame is valid
+        """
+        return True
+```
+
+A simple addition to add checks to all of your functionality.
 
 ## Alternatives & Conclusion
 
@@ -133,7 +159,7 @@ df_result = (
 
 ```
 
-All in all, it's a quick change to add new functionality the widely used data type and maybe help users find them.
+All in all, it's a quick change to add new functionality the widely used data type and maybe help the user experience.
 
 ## Resources
 
