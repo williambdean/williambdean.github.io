@@ -57,7 +57,7 @@ Wikipedia provides table of common conjugate models [here](https://en.wikipedia.
 
 ## Reducing Problem to a Conjugate Model
 
-Though some data problems scream out these common distributions. For instance,
+Some data problems scream out these common distributions. For instance,
 
 - Count data can be modeled with a Poisson distribution
 - Binary data can be modeled with a Bernoulli distribution
