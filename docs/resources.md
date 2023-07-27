@@ -6,7 +6,7 @@ hide:
 
 ## Tools
 
-### Notion
+### [Notion](https://www.notion.so/product)
 
 I started using Notion for organizing my life. I find it is a great tool for personal projects, journaling, and all things above. 
 

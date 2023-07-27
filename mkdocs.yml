@@ -72,7 +72,6 @@ nav:
       - blog/posts/2022/pathlib.md
       - Pydantic for Configs: blog/posts/2022/pydantic-configs.md
       - blog/posts/2022/site-setup.md
-  - Repositories: repos-and-contributions.md
-  - Favorite Resources: 
-    - resources/index.md
+  - Open Source: open-source.md
+  - Favorite Resources: resources.md
   - Contact Me: contact.md
