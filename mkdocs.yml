@@ -65,13 +65,13 @@ nav:
   - Blog: 
     - blog/index.md
     - 2023: 
+      - blog/posts/2023/iteration-pattern.md
       - blog/posts/2023/extending-pandas.md
       - blog/posts/2023/conjugate-priors.md
     - 2022: 
       - blog/posts/2022/pathlib.md
       - Pydantic for Configs: blog/posts/2022/pydantic-configs.md
       - blog/posts/2022/site-setup.md
-  - Repositories: repos-and-contributions.md
-  - Favorite Resources: 
-    - resources/index.md
+  - Open Source: open-source.md
+  - Favorite Resources: resources.md
   - Contact Me: contact.md
