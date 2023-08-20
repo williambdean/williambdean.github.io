@@ -8,6 +8,7 @@ I really enjoy tinkering with code and contributing to open source projects. Her
 
 Created by me:  
 
+- [latent-calendar](https://wd60622.github.io/latent-calendar/): Analyze and model weekly calendar distributions using latent components
 - [conjugate-models](https://wd60622.github.io/conjugate/): A Python package for Bayesian Conjugate Models
 - [pandas-bootstrap](https://wd60622.github.io/pandas-bootstrap/): A Python package for bootstrapping in Pandas
 - [lyft-bikes](https://wd60622.github.io/lyft-bikes/): A Python client of Lyft's Bike Share Data
