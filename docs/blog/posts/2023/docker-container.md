@@ -1,7 +1,8 @@
 ---
 tags: 
-    - Development
     - Data Analysis
+    - Development
+    - Docker
 comments: true
 ---
 # Working within Docker container
