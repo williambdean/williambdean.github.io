@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://wd60622.github.io/blog/posts/2022/pathlib/">
+        <link rel="canonical" href="https://wd60622.github.io/blog/posts/2023/docker-container/">
       
       
-        <link rel="prev" href="../../2023/conjugate-priors/">
+        <link rel="prev" href="../../../">
       
       
-        <link rel="next" href="../pydantic-configs/">
+        <link rel="next" href="../iteration-pattern/">
       
       
       <link rel="icon" href="../../../../assets/images/favicon.png">
@@ -24,7 +24,7 @@
     
     
       
-        <title>My Favorite Python builtin: pathlib - Will Dean</title>
+        <title>Working within Docker container - Will Dean</title>
       
     
     
@@ -79,7 +79,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#my-favorite-python-builtin-pathlib" class="md-skip">
+        <a href="#working-within-docker-container" class="md-skip">
           Skip to content
         </a>
       
@@ -113,7 +113,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              My Favorite Python builtin: pathlib
+              Working within Docker container
             
           </span>
         </div>
@@ -431,6 +431,8 @@
                 
   
   
+    
+  
   
     
     
@@ -450,14 +452,12 @@
       
       
     
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
         
-          
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2" checked>
         
           
           <label class="md-nav__link" for="__nav_2_2" id="__nav_2_2_label" tabindex="">
@@ -471,7 +471,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_2_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_2_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_2_2">
             <span class="md-nav__icon md-icon"></span>
             2023
@@ -482,9 +482,29 @@
                 
   
   
+    
   
-    <li class="md-nav__item">
-      <a href="../../2023/docker-container/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Working within Docker container
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -493,6 +513,95 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#find-or-build-base-image" class="md-nav__link">
+    Find or build base image
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#run-containers-shell" class="md-nav__link">
+    Run container's shell
+  </a>
+  
+    <nav class="md-nav" aria-label="Run container's shell">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#-rm-container-cleanup" class="md-nav__link">
+    --rm: Container cleanup
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-it-interative-terminal" class="md-nav__link">
+    -it: Interative terminal
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-v-access-to-local-files" class="md-nav__link">
+    -v: Access to local files
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-w-setting-container-working-dir" class="md-nav__link">
+    -w: Setting container working dir
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-entrypoint-enter-container-terminal" class="md-nav__link">
+    --entrypoint: Enter container terminal
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    Summary
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    References
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -504,7 +613,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../2023/iteration-pattern/" class="md-nav__link">
+      <a href="../iteration-pattern/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -524,7 +633,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../2023/extending-pandas/" class="md-nav__link">
+      <a href="../extending-pandas/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -544,7 +653,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../2023/conjugate-priors/" class="md-nav__link">
+      <a href="../conjugate-priors/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -570,8 +679,6 @@
                 
   
   
-    
-  
   
     
     
@@ -589,12 +696,14 @@
       
       
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_3" checked>
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2_3" >
         
           
           <label class="md-nav__link" for="__nav_2_3" id="__nav_2_3_label" tabindex="">
@@ -608,7 +717,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_3_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_3_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_2_3">
             <span class="md-nav__icon md-icon"></span>
             2022
@@ -619,29 +728,9 @@
                 
   
   
-    
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    My Favorite Python builtin: pathlib
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../2022/pathlib/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -650,67 +739,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#quick-start" class="md-nav__link">
-    Quick Start
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#using-a-data-folder" class="md-nav__link">
-    Using a data folder
-  </a>
-  
-    <nav class="md-nav" aria-label="Using a data folder">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#additional-folders" class="md-nav__link">
-    Additional folders
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#working-with-s3-locations" class="md-nav__link">
-    Working with S3 locations
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#conclusion" class="md-nav__link">
-    Conclusion
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -722,7 +750,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../pydantic-configs/" class="md-nav__link">
+      <a href="../../2022/pydantic-configs/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -742,7 +770,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../site-setup/" class="md-nav__link">
+      <a href="../../2022/site-setup/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -855,23 +883,51 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#quick-start" class="md-nav__link">
-    Quick Start
+  <a href="#find-or-build-base-image" class="md-nav__link">
+    Find or build base image
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#using-a-data-folder" class="md-nav__link">
-    Using a data folder
+  <a href="#run-containers-shell" class="md-nav__link">
+    Run container's shell
   </a>
   
-    <nav class="md-nav" aria-label="Using a data folder">
+    <nav class="md-nav" aria-label="Run container's shell">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#additional-folders" class="md-nav__link">
-    Additional folders
+  <a href="#-rm-container-cleanup" class="md-nav__link">
+    --rm: Container cleanup
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-it-interative-terminal" class="md-nav__link">
+    -it: Interative terminal
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-v-access-to-local-files" class="md-nav__link">
+    -v: Access to local files
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-w-setting-container-working-dir" class="md-nav__link">
+    -w: Setting container working dir
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-entrypoint-enter-container-terminal" class="md-nav__link">
+    --entrypoint: Enter container terminal
   </a>
   
 </li>
@@ -882,15 +938,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#working-with-s3-locations" class="md-nav__link">
-    Working with S3 locations
+  <a href="#summary" class="md-nav__link">
+    Summary
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#conclusion" class="md-nav__link">
-    Conclusion
+  <a href="#references" class="md-nav__link">
+    References
   </a>
   
 </li>
@@ -914,13 +970,13 @@
     
     
     
-      <a href="../../../#python" class="md-tag">Python</a>
+      <a href="../../../#development" class="md-tag">Development</a>
     
   
     
     
     
-      <a href="../../../#standard-library" class="md-tag">Standard Library</a>
+      <a href="../../../#data-analysis" class="md-tag">Data Analysis</a>
     
   
 </nav>
@@ -930,96 +986,83 @@
   
 
 
-<h1 id="my-favorite-python-builtin-pathlib">My Favorite Python builtin: pathlib</h1>
-<p>When working with python and data, file names quickly become a pain for many reasons. </p>
-<p>Firstly, files quickly add up. This could be from raw data, created processed data, config files, results including models and vizualizations. A lot more files are being worked with than initially thought, so not being organized can be quickly overwhelming.</p>
-<p>Secondly — and this may be a personal problem for me — start adding lengthy, hard-coded values for file names just becomes painful. Sometimes I even find it difficult to want to start working scripts.</p>
-<p>Of course, using strings can work, but this leads to working with many of the functions from the <code>os</code> and <code>os.path</code> modules. Who wants so many imports too? </p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">import</span> <span class="nn">os</span> 
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">from</span> <span class="nn">os.path</span> <span class="kn">import</span> <span class="n">join</span>
+<h1 id="working-within-docker-container">Working within Docker container</h1>
+<p>This has been my workflow to iteractively work from within a running container. </p>
+<p>The goal here is to <em>still</em> rely on the local machine for editing files but to rely on the environment from the container for running any code. </p>
+<p>This simple setup provides: </p>
+<ul>
+<li>Setup of environment regardless of current system dependencies</li>
+<li>Flexible and reproducible environments</li>
+<li>Access to local files from container's shell </li>
+</ul>
+<p>In short, the process is as follows: </p>
+<ol>
+<li>Find or build base image</li>
+<li>Open container's shell </li>
+</ol>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nv">IMAGE_NAME</span><span class="o">=</span>quick-env<span class="w"> </span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>docker<span class="w"> </span>build<span class="w"> </span>-t<span class="w"> </span><span class="nv">$IMAGE_NAME</span><span class="w"> </span>.<span class="w"> </span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">CURRENT_DIR</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="n">file_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;my-data.csv&quot;</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="n">data_file</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="n">CURRENT_DIR</span><span class="p">,</span> <span class="n">file_name</span><span class="p">)</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The file </span><span class="si">{</span><span class="n">data_file</span><span class="si">}</span><span class="s2"> exists: </span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">data_file</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>-it<span class="w"> </span>-v<span class="w"> </span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>:/app<span class="w"> </span>-w<span class="w"> </span>/app<span class="w"> </span>--entrypoint<span class="w"> </span>bash<span class="w"> </span><span class="nv">$IMAGE_NAME</span>
 </code></pre></div>
-<p>Now, hand off your scripts to someone on a Window's machine. All your hard-coded paths aren't even in the right format now and I'm feeling total regrets for ever starting the project <img alt="😄" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.1.2/assets/svg/1f604.svg" title=":smile:" />.</p>
-<h2 id="quick-start">Quick Start</h2>
-<p>Using a <code>pathlib.Path</code> instance instead of a string is meant to be intuitive. </p>
-<p>That is, many actions like creating file, checking stats, relative location, etc are just methods of a <code>Path</code> instance. Other things like file name, suffix, or parents are attributes of the instance. Forget all the imports, working with <code>Path</code> object takes advantage of OOP design.</p>
-<p>When working in a python file, the <code>__file__</code> variable can be utilized in order to find out where the current location is. No need to hard code or think about relative paths.</p>
-<div class="highlight"><span class="filename">current-file.py</span><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span> 
+<p>Below is a breakdown of these commands. </p>
+<h2 id="find-or-build-base-image">Find or build base image</h2>
+<p>We can use one of the many images on <a href="https://hub.docker.com/search?q=">Docker Hub</a> or build off one with a custom <code>Dockerfile</code>. </p>
+<p>Below has python 3.11 with <code>pandas</code>, <code>matplotlib</code>, and <code>IPython</code>  installed: </p>
+<div class="highlight"><span class="filename">Dockerfile</span><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">FROM</span><span class="w"> </span><span class="s">python:3.11</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="n">HERE</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="c1"># New file next to &quot;current-file.py&quot;</span>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="n">new_file</span> <span class="o">=</span> <span class="n">HERE</span> <span class="o">/</span> <span class="s2">&quot;new-file.txt&quot;</span>
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="k">if</span> <span class="ow">not</span> <span class="n">new_file</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span> 
-<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>    <span class="n">new_file</span><span class="o">.</span><span class="n">touch</span><span class="p">()</span>
-<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>
-<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="n">new_file</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="s2">&quot;Writing some text to the new file!&quot;</span><span class="p">)</span>
-<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>
-<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="n">RESULTS_DIR</span> <span class="o">=</span> <span class="n">HERE</span> <span class="o">/</span> <span class="s2">&quot;results&quot;</span>
-<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="n">RESULTS_DIR</span><span class="o">.</span><span class="n">mkdir</span><span class="p">()</span>
-<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>
-<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="c1"># Some processing</span>
-<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="o">...</span>
-<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="n">override</span><span class="p">:</span> <span class="nb">bool</span>
-<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="n">result_file</span> <span class="o">=</span> <span class="n">RESULTS_DIR</span> <span class="o">/</span> <span class="s2">&quot;results-file.csv&quot;</span>
-<a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="k">if</span> <span class="n">results_file</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">override</span><span class="p">:</span> 
-<a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a>    <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;We don&#39;t want to override this file!&quot;</span>
-<a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a>    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="c"># Setup the environment to use in terminal</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="k">RUN</span><span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>pandas<span class="w"> </span>matplotlib<span class="w"> </span>IPython
 </code></pre></div>
-<p>I find the interface very intuitive and cool thing here is that this will work on the machine regardless of the operating system. </p>
-<h2 id="using-a-data-folder">Using a data folder</h2>
-<p>I often have a <code>DATA_DIR</code> constant for many of my projects which refers to a folder <code>data</code> off the root of my project. </p>
-<p>In the file system, that would look like this:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>my_module/
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    ...
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>data/
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>    ...
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>README.md
-</code></pre></div>
-<p>This is an easy setup and saves a lot of headaches in the future.</p>
-<div class="highlight"><span class="filename">my_module/utils.py</span><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="n">DATA_DIR</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="k">if</span> <span class="ow">not</span> <span class="n">DATA_DIR</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span> 
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>    <span class="n">DATA_DIR</span><span class="o">.</span><span class="n">mkdir</span><span class="p">()</span>
-</code></pre></div>
-<p>As long as I am working with my python module, I don't have to worry about much more than the file names I want.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">from</span> <span class="nn">my_module</span> <span class="kn">import</span> <span class="n">utils</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="n">file</span><span class="p">:</span> <span class="n">Path</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">DATA_DIR</span> <span class="o">/</span> <span class="s2">&quot;raw&quot;</span> <span class="o">/</span> <span class="s2">&quot;my-data.csv&quot;</span>
-</code></pre></div>
-<h3 id="additional-folders">Additional folders</h3>
-<p>I often extend this to include other folders I will likely have based on a project. This might be a folder <code>data/raw</code>, <code>data/results</code>, or even a <code>configs</code> dir.</p>
-<p>This depends on the project but all of this is with the goal of being as organized as possible from the start. </p>
-<p>I recently watched this related video on naming files and found it useful. </p>
-<div align="center">
-<iframe width="560" height="315" src="https://www.youtube.com/embed/ES1LTlnpLMk" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+<p>Build a new image with <code>docker build -t &lt;image-name&gt; .</code></p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Nothing from the local file system is tranferred here as we will still rely on the local file system</p>
 </div>
-
-<h2 id="working-with-s3-locations">Working with S3 locations</h2>
-<p>I learned about <a href="https://github.com/liormizr/s3path">this python package</a> while working with S3 paths on AWS. I haven't personally used but I think it looks promising and would provide a similar enjoyable experience as the <code>pathlib</code> module.</p>
-<h2 id="conclusion">Conclusion</h2>
-<p>Taming all the files you are working with is never an easy battle. However, I find using <code>pathlib</code> makes the process just a little more enjoyable.</p>
+<h2 id="run-containers-shell">Run container's shell</h2>
+<p>Run this container and enter iteractively into its shell with the following command: </p>
+<p><code>docker run --rm -it -v $(pwd):/app -w /app --entrypoint bash &lt;image-name&gt;</code></p>
+<p>These flag shouldn't need to be changed and should work in most cases but can always be customized. </p>
+<p>The <a href="https://docs.docker.com/engine/reference/commandline/run/"><code>docker run</code> documentation</a> is very thorough but here is some info on the flags used: </p>
+<h3 id="-rm-container-cleanup"><code>--rm</code>: Container cleanup</h3>
+<p>This is optional flag but is helpful for decluttering after a run.</p>
+<h3 id="-it-interative-terminal"><code>-it</code>: Interative terminal</h3>
+<p>Use the <code>-i</code> and <code>-t</code> flags (or <code>-it</code> together) in order for running container to use our input and output. 
+I alway remember this as <strong>i</strong>teractive <strong>t</strong>erminal</p>
+<h3 id="-v-access-to-local-files"><code>-v</code>: Access to local files</h3>
+<p>Mount local volume such that changes to local files can be accessed from and by the container. </p>
+<p>This can be any location on either local or image, but <code>$(pwd):/app</code> usually does the trick.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The <code>/app</code> location will be created if it doesn't already exist!</p>
+</div>
+<h3 id="-w-setting-container-working-dir"><code>-w</code>: Setting container working dir</h3>
+<p>Though this is not required, this will set the local directory for the container to where we mounted our local files. </p>
+<h3 id="-entrypoint-enter-container-terminal"><code>--entrypoint</code>: Enter container terminal</h3>
+<p>Using <code>docker run</code> doesn't guarantee that a terminal will be kicked off. However, the entrypoint for the image can be overridden during the with the <code>--entrypoint</code> flag. </p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Most of the time the shell will be <code>bash</code> but could be another shell like <code>sh</code></p>
+</div>
+<h2 id="summary">Summary</h2>
+<p>Docker makes it easy to create new isolated environments without touching local system dependencies while working with local files.</p>
+<p>Overall, Docker is awesome <img alt="😄" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.1.2/assets/svg/1f604.svg" title=":smile:" /></p>
+<h2 id="references">References</h2>
+<ul>
+<li><a href="https://hub.docker.com/search?q=">Docker Hub</a></li>
+<li><a href="https://docs.docker.com/engine/reference/commandline/run/"><code>docker run</code> Documentation</a></li>
+</ul>
 
   <hr>
 <div class="md-source-file">
   <small>
     
       Last update:
-      <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date">December 19, 2022</span>
+      <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date">September 29, 2023</span>
       
         <br>
         Created:
-        <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date">December 18, 2022</span>
+        <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date">September 29, 2023</span>
       
     
   </small>
