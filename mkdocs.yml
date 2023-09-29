@@ -65,6 +65,7 @@ nav:
   - Blog: 
     - blog/index.md
     - 2023: 
+      - blog/posts/2023/docker-container.md
       - blog/posts/2023/iteration-pattern.md
       - blog/posts/2023/extending-pandas.md
       - blog/posts/2023/conjugate-priors.md
