@@ -6,7 +6,7 @@ comments: true
 ---
 # Working within Docker container
 
-This has been my workflow to iteractively work from within running container. 
+This has been my workflow to iteractively work from within a running container. 
 
 The goal here is to *still* rely on the local machine for editing files but to rely on the environment from the container for running any code. 
 
@@ -89,9 +89,9 @@ Using `docker run` doesn't guarantee that a terminal will be kicked off. However
 
 ## Summary
 
-Docker makes it easy to create new isolated environments without touching local system dependencies. 
+Docker makes it easy to create new isolated environments without touching local system dependencies while working with local files.
 
-Docker is awesome :smile:
+Overall, Docker is awesome :smile:
 
 ## References 
 
