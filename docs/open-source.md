@@ -15,8 +15,9 @@ Created by me:
 
 Contributed to:
 
-- [PyMC](https://github.com/pymc-devs/pymc): Various [issues](https://github.com/pymc-devs/pymc/issues?q=is%3Aissue+is%3Aclosed+author%3Awd60622) and [Pull Requests](https://github.com/pymc-devs/pymc/pulls?q=is%3Apr+is%3Aclosed+author%3Awd60622)
-- [PyMC-Marketing](https://github.com/pymc-labs/pymc-marketing): Various [issues](https://github.com/pymc-labs/pymc-marketing/issues?q=is%3Aissue+is%3Aclosed+author%3Awd60622) and [Pull Requests](https://github.com/pymc-labs/pymc-marketing/pulls?q=is%3Apr+is%3Aclosed+author%3Awd60622)
+- [PyMC](https://github.com/pymc-devs/pymc): Various [issues](https://github.com/pymc-devs/pymc/issues?q=is%3Aissue+author%3Awd60622) and [Pull Requests](https://github.com/pymc-devs/pymc/pulls?q=is%3Apr+author%3Awd60622)
+- [PyMC-Marketing](https://github.com/pymc-labs/pymc-marketing): Various [issues](https://github.com/pymc-labs/pymc-marketing/issues?q=is%3Aissue+author%3Awd60622) and [Pull Requests](https://github.com/pymc-labs/pymc-marketing/pulls?q=is%3Apr+author%3Awd60622)
+- [PyPika](https://github.com/kayak/pypika/): Various [issues](https://github.com/kayak/pypika/issues?q=is%3Aissue+author%3Awd60622+) and [Pull Requests](https://github.com/kayak/pypika/pulls?q=is%3Apr+author%3Awd60622)
 -  Small features, bug fix, of documentation PRs 
     - [bambi](https://github.com/bambinos/bambi/pulls?q=is%3Apr+author%3Awd60622+)
     - [formulae](https://github.com/bambinos/formulae/pulls?q=is%3Apr+author%3Awd60622+)
