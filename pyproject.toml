@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "website"
 version = "0.1.0"
-description = ""
+description = "Personal website for Will Dean"
 authors = ["Will Dean <wd60622@gmail.com>"]
 readme = "README.md"
 
@@ -22,6 +22,11 @@ mkdocs-jupyter = "^0.22.0"
 blacken-docs = "^1.12.1"
 mkdocs-markdownextradata-plugin = "^0.2.5"
 mkdocs-git-revision-date-localized-plugin = "^1.1.0"
+
+
+[tool.poetry.group.misc.dependencies]
+pandas = "^2.0.3"
+matplotlib = "^3.7.2"
 
 [build-system]
 requires = ["poetry-core"]
