@@ -19,6 +19,12 @@ solution in this [pull
 request](https://github.com/pymc-labs/pymc-marketing/pull/632). Check there for
 more implementation details.
 
+Following this PR, there is built in support for 3 adstock functions and 6
+saturation functions. Not only that, but the solution allows for easy addition
+of adstock, saturation ordering. In total, there are **3 * 6 * 2 = 36 new
+out-of-the-box MMM combinations** with `pymc-marketing` not including the
+ability to add custom adstock and saturation functions as well.
+
 ## Problem
 
 The `pymc-marketing` package requires flexibility in order to support a wide
@@ -342,8 +348,9 @@ mmm.fit(X, y)
 
 ## Summary
 
-By defining a common function signature and interface, we get flexibility and
-ease addition of new functions without the need to update existing code. 
+By defining a common function signature for all adstock and saturation
+functions, we get flexibility and ease addition of new functions without the
+need to update existing code. 
 
 This breaks down the process into two steps:
 
