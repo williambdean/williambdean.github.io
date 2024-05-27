@@ -40,7 +40,8 @@ These assumptions affect:
 **This will focus on the saturation function and how the strategy pattern was
 used to create a flexible solution.**
 
-Various saturation functions can be used to model diminishing returns. For instance, the following functions can be used:
+Various saturation functions can be used to model diminishing returns. For
+instance, the following functions can be used:
 
 - logistic
 - tanh
@@ -233,10 +234,10 @@ saturation(0.5)
 
 ### Usage Example
 
-Because of the common interface, these created functions can be passed around 
+Because of the common interface, these created functions can be passed around
 making that naive `saturation` function no longer necessary.
 
-Below showcases all of the saturation functions in action which can be easily 
+Below showcases all of the saturation functions in action which can be easily
 used due to the common interface.
 
 ```python
