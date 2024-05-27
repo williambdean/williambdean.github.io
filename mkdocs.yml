@@ -64,6 +64,8 @@ nav:
   - Welcome: index.md
   - Blog: 
     - blog/index.md
+    - 2024:
+      - blog/posts/2024/pymc-marketing-strategy-pattern.md
     - 2023: 
       - blog/posts/2023/docker-container.md
       - blog/posts/2023/iteration-pattern.md
