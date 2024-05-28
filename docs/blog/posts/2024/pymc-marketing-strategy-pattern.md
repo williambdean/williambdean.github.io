@@ -19,11 +19,29 @@ solution in this [pull
 request](https://github.com/pymc-labs/pymc-marketing/pull/632). Check there for
 more implementation details.
 
-Following this PR, there is built in support for 3 adstock functions and 6
+Following this PR, there is built in support for 4 adstock functions and 5
 saturation functions. Not only that, but the solution allows for easy addition
-of adstock, saturation ordering. In total, there are **3 * 6 * 2 = 36 new
+of adstock, saturation ordering. In total, there are **4 * 5 * 2 = 40 new
 out-of-the-box MMM combinations** with `pymc-marketing` not including the
 ability to add custom adstock and saturation functions as well.
+
+??? info "List of Adstock and Saturation Functions"
+
+    **Adstock**
+
+    - Geometric
+    - Delayed
+    - Weibull CDF
+    - Weibull PDF
+
+    **Saturation**
+
+    - Logistic
+    - Tanh
+    - Tanh Baselined
+    - Hill
+    - Michaelis-Menten
+
 
 ## Problem
 
@@ -254,11 +272,14 @@ saturation_functions = {
 }
 
 # Application
-x = np.linspace(0, 1, 100)
 ax = plt.subplot(111)
+
+x = np.linspace(0, 1, 100)
+
 for name, saturation in saturation_functions.items(): 
     y = saturation(x)
     ax.plot(x, y, label=name)
+
 ax.legend()
 ax.set(
     xlabel="media variable", 
@@ -307,6 +328,7 @@ Though there is a little more boilerplate, the two step process is still used.
 saturation = InfiniteReturns()
 
 x = np.linspace(0, 1, 100)
+
 with pm.Model():
     saturated_x = saturation.apply(x)
 ```
