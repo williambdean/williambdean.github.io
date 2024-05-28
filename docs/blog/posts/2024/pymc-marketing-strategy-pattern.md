@@ -25,7 +25,7 @@ of adstock, saturation ordering. In total, there are **4 * 5 * 2 = 40 new
 out-of-the-box MMM combinations** with `pymc-marketing` not including the
 ability to add custom adstock and saturation functions as well.
 
-??? info "List of Adstock and Saturation Functions"
+??? info "Out-of-Box Adstock and Saturation Functions"
 
     **Adstock**
 
