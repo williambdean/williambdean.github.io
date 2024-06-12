@@ -345,7 +345,7 @@ marketing assumptions.
 
 ```python title="pymc-marketing solution in action"
 from pymc_marketing.mmm import (
-    DelayedSaturatedMMM,
+    MMM,
     MichaelisMentenSaturation 
     WeibullAdstock, 
 )
@@ -360,7 +360,7 @@ saturation_priors = {
 saturation = MichaelisMentenSaturation(priors=saturation_priors)
 
 # Application
-mmm = DelayedSaturatedMMM(
+mmm = MMM(
     ...,
     adstock=adstock,
     saturation=saturation,
