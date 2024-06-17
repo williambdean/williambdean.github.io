@@ -60,6 +60,9 @@ extra:
       link: https://github.com/wd60622
     - icon: fontawesome/brands/linkedin
       link: https://www.linkedin.com/in/williambdean/
+  analytics: 
+    provider: google
+    property: G-R1GGWK6LCW
 
 nav:
   - Welcome: index.md
