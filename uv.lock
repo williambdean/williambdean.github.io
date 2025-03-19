@@ -789,6 +789,19 @@ wheels = [
 ]
 
 [[package]]
+name = "mkdocs-video"
+version = "1.5.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "lxml" },
+    { name = "mkdocs" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/cf/16/45213649b6756744f36f31014fc8673df1d7c998bb9a801c2d769fff4114/mkdocs-video-1.5.0.tar.gz", hash = "sha256:0defc018f4b7927f8afffc4d8e039c84dfba636dffc5e25e2bfa8d6350bc8eca", size = 5633 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/cc/3a/b51e305eca21cdd58f4eb06973099ba0ea679b1f437a92a49f8fc576310e/mkdocs_video-1.5.0-py3-none-any.whl", hash = "sha256:b35613d4dacbac2dfa94d8c2600383cda14ad99a1fa1542b5fc4e9c6d19e9fe1", size = 6570 },
+]
+
+[[package]]
 name = "mypy-extensions"
 version = "1.0.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1403,6 +1416,7 @@ docs = [
     { name = "mkdocs-jupyter" },
     { name = "mkdocs-markdownextradata-plugin" },
     { name = "mkdocs-material" },
+    { name = "mkdocs-video" },
 ]
 misc = [
     { name = "matplotlib" },
@@ -1424,6 +1438,7 @@ docs = [
     { name = "mkdocs-jupyter", specifier = ">=0.22.0,<0.23" },
     { name = "mkdocs-markdownextradata-plugin", specifier = ">=0.2.5,<0.3" },
     { name = "mkdocs-material", specifier = ">=8.5.11,<9" },
+    { name = "mkdocs-video", specifier = ">=1.5.0" },
 ]
 misc = [
     { name = "matplotlib", specifier = ">=3.7.2,<4" },
