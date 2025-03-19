@@ -36,7 +36,7 @@ GitHub allows you to set up a site for free. If the repo is named `<username>.gi
 !!! tip 
     If you deploy with GitHub pages in any other repo, the docs with be hosted at `https://<username>.github.io/<repo-name>`. Super cool and would like to use in the future to make quick project documentation!
 
-All the code to create this site is on my GitHub [here](https://github.com/wd60622/wd60622.github.io).
+All the code to create this site is on my GitHub [here](https://github.com/williambdean/williambdean.github.io).
 
 ### GitHub Action
 
@@ -44,7 +44,7 @@ The mkdocs-material documentation has the steps in order to set up your GitHub A
 
 ### GitHub Page Settings
 
-I had some hiccups while setting up the site. Initially, only my README was being served at <a href="https://wd60622.github.io">https://wd60622.github.io</a>. However, the default **"Deploy from a branch"** setting in the GitHub Pages section was on the `main` branch which only had the README. 
+I had some hiccups while setting up the site. Initially, only my README was being served at <a href="https://williambdean.github.io">https://williambdean.github.io</a>. However, the default **"Deploy from a branch"** setting in the GitHub Pages section was on the `main` branch which only had the README. 
 
 !!! note
     Running `mkdocs gh-deploy` pushes all the html files to `gh-pages` branch in my repo so that branch needed to be selected in the Settings.

@@ -164,5 +164,5 @@ All in all, it's a quick change to add new functionality the widely used data ty
 ## Resources
 
 - [Pandas User Guide: Extending Pandas](https://pandas.pydata.org/docs/development/extending.html)
-- [`pandas-bootstrap` package](https://wd60622.github.io/pandas-bootstrap/)
+- [`pandas-bootstrap` package](https://williambdean.github.io/pandas-bootstrap/)
 

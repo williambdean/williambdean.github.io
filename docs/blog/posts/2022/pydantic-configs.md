@@ -268,7 +268,7 @@ if __name__ == "__main__":
 
 ```
 
-Find the gist of this [here](https://gist.github.com/wd60622/d8cc702f48e51d9a1e687ca1b6b66212) with an additional example.
+Find the gist of this [here](https://gist.github.com/williambdean/d8cc702f48e51d9a1e687ca1b6b66212) with an additional example.
 
 Prefer [TOML Configs](https://toml.io/en/)? Can imagine similar support for TOML configs (especially with latest support in python 3.11). Same goes with some additional formats too.
 

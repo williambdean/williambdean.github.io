@@ -1,9 +1,9 @@
 site_name: Will Dean
-site_url: https://wd60622.github.io/
+site_url: https://williambdean.github.io/
 site_description: Personal Website for Will Dean
 
-repo_name: wd60622.github.io
-repo_url: https://github.com/wd60622/wd60622.github.io
+repo_name: williambdean.github.io
+repo_url: https://github.com/williambdean/williambdean.github.io
 edit_uri: blob/main/docs/
 
 theme: 
@@ -57,7 +57,7 @@ markdown_extensions:
 extra: 
   social: 
     - icon: fontawesome/brands/github
-      link: https://github.com/wd60622
+      link: https://github.com/williambdean
     - icon: fontawesome/brands/linkedin
       link: https://www.linkedin.com/in/williambdean/
   analytics: 

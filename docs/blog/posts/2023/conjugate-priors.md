@@ -91,4 +91,4 @@ Conjugate priors are a great way to get started with Bayesian statistics. They p
 
 They are good for simple models and can be applied at a granular level.
 
-If you're interested in trying out in python or want to see more examples, check out my [repo](https://github.com/wd60622/conjugate/) and [docs](https://wd60622.github.io/conjugate/) to use conjugate priors. 
+If you're interested in trying out in python or want to see more examples, check out my [repo](https://github.com/williambdean/conjugate/) and [docs](https://williambdean.github.io/conjugate/) to use conjugate priors. 
