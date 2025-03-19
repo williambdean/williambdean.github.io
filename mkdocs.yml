@@ -33,6 +33,7 @@ theme:
 
 plugins:
   - search
+  - mkdocs-video
   - tags:
       tags_file: blog/index.md
   - markdownextradata
@@ -68,6 +69,8 @@ nav:
   - Welcome: index.md
   - Blog: 
     - blog/index.md
+    - 2025:
+      - blog/posts/2025/pytest-debugging.md
     - 2024:
       - blog/posts/2024/pymc-marketing-strategy-pattern.md
     - 2023: 
