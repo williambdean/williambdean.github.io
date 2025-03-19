@@ -365,6 +365,8 @@
       
         
       
+        
+      
     
     
       
@@ -447,7 +449,7 @@
             
   
   <span class="md-ellipsis">
-    2024
+    2025
     
   </span>
   
@@ -457,6 +459,86 @@
         
         <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_2_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_2_2">
+            <span class="md-nav__icon md-icon"></span>
+            2025
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../2025/pytest-debugging/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Debugging with pytest
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_3" id="__nav_2_3_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    2024
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_3">
             <span class="md-nav__icon md-icon"></span>
             2024
           </label>
@@ -526,10 +608,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_3" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_4" checked>
         
           
-          <label class="md-nav__link" for="__nav_2_3" id="__nav_2_3_label" tabindex="">
+          <label class="md-nav__link" for="__nav_2_4" id="__nav_2_4_label" tabindex="">
             
   
   <span class="md-ellipsis">
@@ -541,8 +623,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_3_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_2_3">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2_4">
             <span class="md-nav__icon md-icon"></span>
             2023
           </label>
@@ -771,10 +853,10 @@
         
           
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2_4" >
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2_5" >
         
           
-          <label class="md-nav__link" for="__nav_2_4" id="__nav_2_4_label" tabindex="">
+          <label class="md-nav__link" for="__nav_2_5" id="__nav_2_5_label" tabindex="">
             
   
   <span class="md-ellipsis">
@@ -786,8 +868,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_4_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_2_4">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_5">
             <span class="md-nav__icon md-icon"></span>
             2022
           </label>
@@ -1010,7 +1092,7 @@
   
 
 
-<h1 id="conjugate-priors">Conjugate Priors</h1>
+<div><h1 id="conjugate-priors">Conjugate Priors</h1>
 <p>Bayesian statistics is a great way to think about data under the uncertainty of model parameters and I've found conjugate priors to be a good way to get started with some problems. </p>
 <h2 id="what-is-a-conjugate-prior">What is a Conjugate Prior?</h2>
 <p>A conjugate prior is a prior distribution that is in the same family as the posterior distribution. This is a mathematic convenience that makes it easier to calculate the posterior distribution, often just with a simple addition to the parameters of the prior distribution using the observed data. </p>
@@ -1039,7 +1121,7 @@
 <p>The <strong>prior</strong> predictive distribution is also a Beta-Binomial distribution. Just the posterior predictive with prior info. This provides the results we <em>expect</em> to see before we see the actual data.</p>
 </div>
 <p>Below is visualization of 10 trials, before and after we see the data.</p>
-<p><img alt="Binomial Model" src="../../images/binomial-beta.png" /></p>
+<p><img alt="Binomial Model" src="../../images/binomial-beta.png"></p>
 <h2 id="common-conjugate-models">Common Conjugate Models</h2>
 <p>Many common distributions like the Bernoulli, Poisson, or Normal distributions have conjugate models. They show up a lot in the single parameter distributions or where all but one parameter is known. </p>
 <p>Wikipedia provides table of common conjugate models <a href="https://en.wikipedia.org/wiki/Conjugate_prior#Table_of_conjugate_distributions">here</a>.</p>
@@ -1064,7 +1146,7 @@
 <h2 id="summary">Summary</h2>
 <p>Conjugate priors are a great way to get started with Bayesian statistics. They provide a closed form posterior distribution and, often, posterior predictive distribution. This can be useful to understand the data and make decisions.</p>
 <p>They are good for simple models and can be applied at a granular level.</p>
-<p>If you're interested in trying out in python or want to see more examples, check out my <a href="https://github.com/williambdean/conjugate/">repo</a> and <a href="https://williambdean.github.io/conjugate/">docs</a> to use conjugate priors. </p>
+<p>If you're interested in trying out in python or want to see more examples, check out my <a href="https://github.com/williambdean/conjugate/">repo</a> and <a href="https://williambdean.github.io/conjugate/">docs</a> to use conjugate priors. </p></div>
 
 
 
