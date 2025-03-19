@@ -1,33 +1,40 @@
-[tool.poetry]
+[project]
 name = "website"
 version = "0.1.0"
 description = "Personal website for Will Dean"
-authors = ["Will Dean <wd60622@gmail.com>"]
+authors = [{ name = "Will Dean", email = "wd60622@gmail.com" }]
+requires-python = "~=3.12"
 readme = "README.md"
 
-[tool.poetry.dependencies]
-python = "^3.9"
+[dependency-groups]
+dev = [
+    "pytest>=7.2.0,<8",
+    "pytest-cov>=4.0.0,<5",
+    "typer>=0.7.0,<0.8",
+]
+docs = [
+    "mkdocs>=1.4.2,<2",
+    "mkdocs-material>=8.5.11,<9",
+    "mkdocs-jupyter>=0.22.0,<0.23",
+    "blacken-docs>=1.12.1,<2",
+    "mkdocs-markdownextradata-plugin>=0.2.5,<0.3",
+    "mkdocs-git-revision-date-localized-plugin>=1.1.0,<2",
+]
+misc = [
+    "pandas>=2.0.3,<3",
+    "matplotlib>=3.7.2,<4",
+]
 
-
-[tool.poetry.group.dev.dependencies]
-pytest = "^7.2.0"
-pytest-cov = "^4.0.0"
-typer = "^0.7.0"
-
-
-[tool.poetry.group.docs.dependencies]
-mkdocs = "^1.4.2"
-mkdocs-material = "^8.5.11"
-mkdocs-jupyter = "^0.22.0"
-blacken-docs = "^1.12.1"
-mkdocs-markdownextradata-plugin = "^0.2.5"
-mkdocs-git-revision-date-localized-plugin = "^1.1.0"
-
-
-[tool.poetry.group.misc.dependencies]
-pandas = "^2.0.3"
-matplotlib = "^3.7.2"
+[tool.uv]
+default-groups = [
+    "dev",
+    "docs",
+    "misc",
+]
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]
