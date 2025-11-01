@@ -34,8 +34,7 @@ theme:
 plugins:
   - search
   - mkdocs-video
-  - tags:
-      tags_file: blog/index.md
+  - tags
   - markdownextradata
   - git-revision-date-localized: 
       enable_creation_date: true
