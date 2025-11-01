@@ -52,8 +52,8 @@ markdown_extensions:
   - pymdownx.superfences
   - attr_list
   - pymdownx.emoji:
-      emoji_index: !!python/name:materialx.emoji.twemoji
-      emoji_generator: !!python/name:materialx.emoji.to_svg
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
 
 extra: 
   social: 
@@ -70,6 +70,7 @@ nav:
   - Blog: 
     - blog/index.md
     - 2025:
+      - blog/posts/2025/automate-docs-with-marimo.md
       - blog/posts/2025/pytest-debugging.md
     - 2024:
       - blog/posts/2024/pymc-marketing-strategy-pattern.md

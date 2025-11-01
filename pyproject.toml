@@ -3,7 +3,7 @@ name = "website"
 version = "0.1.0"
 description = "Personal website for Will Dean"
 authors = [{ name = "Will Dean", email = "wd60622@gmail.com" }]
-requires-python = "~=3.12"
+requires-python = "~=3.12.0"
 readme = "README.md"
 
 [dependency-groups]
@@ -14,8 +14,8 @@ dev = [
 ]
 docs = [
     "mkdocs>=1.4.2,<2",
-    "mkdocs-material>=8.5.11,<9",
-    "mkdocs-jupyter>=0.22.0,<0.23",
+    "mkdocs-material>=9.4,<10",
+    "mkdocs-jupyter>=0.24.0,<0.25",
     "blacken-docs>=1.12.1,<2",
     "mkdocs-markdownextradata-plugin>=0.2.5,<0.3",
     "mkdocs-git-revision-date-localized-plugin>=1.1.0,<2",
