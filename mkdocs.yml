@@ -6,17 +6,16 @@ repo_name: williambdean.github.io
 repo_url: https://github.com/williambdean/williambdean.github.io
 edit_uri: blob/main/docs/
 
-theme: 
+theme:
   name: material
   custom_dir: docs/overrides
-  features: 
+  features:
     - navigation.indexes
     - navigation.sections
     - navigation.tabs
     - navigation.expand
     - navigation.top
   palette:
-
     # Palette toggle for light mode
     - media: "(prefers-color-scheme: light)"
       scheme: default
@@ -36,14 +35,14 @@ plugins:
   - mkdocs-video
   - tags
   - markdownextradata
-  - git-revision-date-localized: 
+  - git-revision-date-localized:
       enable_creation_date: true
   # - mkdocs-jupyter
 
 markdown_extensions:
   - admonition
   - md_in_html
-  - pymdownx.highlight: 
+  - pymdownx.highlight:
       anchor_linenums: true
   - pymdownx.inlinehilite
   - pymdownx.snippets
@@ -54,32 +53,33 @@ markdown_extensions:
       emoji_index: !!python/name:material.extensions.emoji.twemoji
       emoji_generator: !!python/name:material.extensions.emoji.to_svg
 
-extra: 
-  social: 
+extra:
+  social:
     - icon: fontawesome/brands/github
       link: https://github.com/williambdean
     - icon: fontawesome/brands/linkedin
       link: https://www.linkedin.com/in/williambdean/
-  analytics: 
+  analytics:
     provider: google
     property: G-R1GGWK6LCW
 
 nav:
   - Welcome: index.md
-  - Blog: 
-    - blog/index.md
-    - 2025:
-      - blog/posts/2025/automate-docs-with-marimo.md
-      - blog/posts/2025/pytest-debugging.md
-    - 2024:
-      - blog/posts/2024/pymc-marketing-strategy-pattern.md
-    - 2023: 
-      - blog/posts/2023/docker-container.md
-      - blog/posts/2023/iteration-pattern.md
-      - blog/posts/2023/extending-pandas.md
-      - blog/posts/2023/conjugate-priors.md
-    - 2022: 
-      - blog/posts/2022/pathlib.md
-      - Pydantic for Configs: blog/posts/2022/pydantic-configs.md
-      - blog/posts/2022/site-setup.md
+  - Appearances: appearances.md
+  - Blog:
+      - blog/index.md
+      - 2025:
+          - blog/posts/2025/automate-docs-with-marimo.md
+          - blog/posts/2025/pytest-debugging.md
+      - 2024:
+          - blog/posts/2024/pymc-marketing-strategy-pattern.md
+      - 2023:
+          - blog/posts/2023/docker-container.md
+          - blog/posts/2023/iteration-pattern.md
+          - blog/posts/2023/extending-pandas.md
+          - blog/posts/2023/conjugate-priors.md
+      - 2022:
+          - blog/posts/2022/pathlib.md
+          - Pydantic for Configs: blog/posts/2022/pydantic-configs.md
+          - blog/posts/2022/site-setup.md
   - Open Source: open-source.md
