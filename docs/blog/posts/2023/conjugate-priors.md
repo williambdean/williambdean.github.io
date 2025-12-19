@@ -1,4 +1,5 @@
 ---
+description: An introduction to conjugate priors in Bayesian statistics, explaining what they are, why they are useful, and how they can be applied to data analysis problems.
 tags: 
     - Python
     - Bayesian Statistics

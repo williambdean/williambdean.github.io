@@ -1,4 +1,5 @@
 ---
+description: A look at the pathlib module in the Python standard library and how it can be used to work with files and paths in a more intuitive and object-oriented way.
 tags: 
     - Python
     - Standard Library

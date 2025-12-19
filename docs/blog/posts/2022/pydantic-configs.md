@@ -1,4 +1,5 @@
 ---
+description: Learn how to use Pydantic to create structured, validated, and reusable configuration files for your Python projects.
 tags: 
     - Python
     - Config Files

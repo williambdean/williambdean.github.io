@@ -1,4 +1,5 @@
 ---
+description: Explore the iteration pattern in Python, learning how to leverage generators and `__iter__`/`__next__` methods to create flexible and generalized code for processing data.
 tags: 
     - Design Patterns
     - Python

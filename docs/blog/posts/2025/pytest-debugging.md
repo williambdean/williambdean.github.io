@@ -1,4 +1,5 @@
 ---
+description: Discover how the `--pdb` flag in pytest can be a game-changer for debugging Python tests, allowing you to drop into a debugger when a test fails.
 tags: 
     - Python
     - Testing

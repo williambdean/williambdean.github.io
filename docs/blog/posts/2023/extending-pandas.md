@@ -1,4 +1,5 @@
 ---
+description: Learn how to extend Pandas DataFrames with custom accessors to add new functionality and promote more readable and organized code.
 tags: 
     - Python
     - Pandas

@@ -1,4 +1,5 @@
 ---
+description: A step-by-step guide on how to work interactively within a Docker container, while still using your local machine for editing files.
 tags: 
     - Data Analysis
     - Development

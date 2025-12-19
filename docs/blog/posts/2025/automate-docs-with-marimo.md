@@ -1,4 +1,5 @@
 ---
+description: A guide to automating documentation generation using Marimo notebooks and GitHub Actions, providing an alternative to MkDocs for WASM-powered HTML documentation.
 tags: 
     - Python
     - Documentation

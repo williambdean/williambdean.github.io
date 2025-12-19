@@ -1,4 +1,5 @@
 ---
+description: Learn how the Strategy design pattern was applied in `pymc-marketing` to create a flexible solution for various Marketing Mix Model (MMM) saturation and adstock functions.
 tags: 
     - Python
     - PyMC 

@@ -1,4 +1,5 @@
 ---
+description: A guide to setting up a personal website using MkDocs, mkdocs-material, and GitHub Pages, including configuration and deployment details.
 tags: 
     - Python
     - Documentation

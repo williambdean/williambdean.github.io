@@ -1,6 +1,7 @@
 ---
 hide: 
     - navigation
+description: A summary of Will Dean's open source contributions, including created repositories and contributions to other projects.
 ---
 # Open Source Contributions
 
