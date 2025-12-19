@@ -1,6 +1,7 @@
 ---
 hide: 
     - navigation
+    - toc
 description: A collection of talks, podcasts, and other appearances by Will Dean.
 ---
 # Appearances
