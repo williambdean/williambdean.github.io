@@ -25,7 +25,7 @@ MkDocs really makes it so easy to set up a page. The [Getting Started Section](h
 The simpliest project setup will just be two files: 
 
 <p align="center">
-<img src=https://www.mkdocs.org/img/initial-layout.png />
+<img alt="Initial layout of an MkDocs project with docs and mkdocs.yml files." src=https://www.mkdocs.org/img/initial-layout.png />
 </p>
 
 The themes and capabilities were inspired from the [mkdocs-material](https://squidfunk.github.io/mkdocs-material/) site and exploring its [mkdocs.yml](https://github.com/squidfunk/mkdocs-material/blob/master/mkdocs.yml) helped implement mine.
@@ -52,7 +52,7 @@ I had some hiccups while setting up the site. Initially, only my README was bein
 
 Below are Settings section that worked for my deployment.
 
-![GitHub Page Setting](../images/gh-pages-settings.PNG)
+![Screenshot of GitHub Pages settings showing 'gh-pages' branch selected for deployment.](../images/gh-pages-settings.PNG)
 
 ## Helpful Links
 

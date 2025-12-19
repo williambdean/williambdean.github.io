@@ -47,7 +47,7 @@ Having a closed form distribution for the posterior distribution and posterior p
 
 Below is visualization of 10 trials, before and after we see the data.
 
-![Binomial Model](../images/binomial-beta.png)
+![A plot showing the prior and posterior distributions of a binomial model with a beta conjugate prior.](../images/binomial-beta.png)
 
 
 ## Common Conjugate Models

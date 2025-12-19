@@ -14,7 +14,7 @@ I've set up a command `DRunTests` to kick this off for the test that my cursor i
 
 If you would like to check around at a given point, use `assert 0` as an alternative. Here it is in action:
 
-![type:video](../videos/pytest-debug.mp4)
+![Debugging pytest with --pdb flag](../videos/pytest-debug.mp4)
 
 There are a few great commands to remember when using the debugger:
 

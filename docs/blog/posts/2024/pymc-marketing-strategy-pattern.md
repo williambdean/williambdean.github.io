@@ -289,7 +289,7 @@ ax.set(
 )
 ```
 
-![Saturation Functions](../images/saturation_functions.png)
+![A plot showing different saturation functions, including logistic, tanh, Hill, Michaelis-Menten, and Infinite Returns.](../images/saturation_functions.png)
 
 ## `pymc-marketing` Solution
 

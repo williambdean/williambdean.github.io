@@ -429,7 +429,7 @@ This is clearly the most explicit version of the three. However, there are a lot
 ## Conclusion
 
 <div align="center">
-<a href="https://imgflip.com/i/74rroj"><img src="https://i.imgflip.com/74rroj.jpg" title="made at imgflip.com"/></a><div><a href="https://imgflip.com/memegenerator"></a></div>
+<a href="https://imgflip.com/i/74rroj"><img src="https://i.imgflip.com/74rroj.jpg" alt="A meme image with the text 'Me explaining to the new hire why config files are important' and a man pointing passionately." title="made at imgflip.com"/></a><div><a href="https://imgflip.com/memegenerator"></a></div>
 </div>
 
 Overall, I've found defining configs with pydantic in mind very useful. It can be super quick to do, provide a lot more structure and understanding to the config settings, and leverage the powerful parsing validation from the library. Give it a try!

@@ -108,7 +108,7 @@ This depends on the project but all of this is with the goal of being as organiz
 
 I recently watched this related video on naming files and found it useful. 
 <div align="center">
-<iframe width="560" height="315" src="https://www.youtube.com/embed/ES1LTlnpLMk" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/ES1LTlnpLMk" title="YouTube video about naming files effectively" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 </div>
 
 ## Working with S3 locations
