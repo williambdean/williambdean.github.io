@@ -5,6 +5,16 @@ description: A collection of talks, podcasts, and other appearances by Will Dean
 ---
 # Appearances
 
+## Building a production-ready MMM pipeline with Fivetran and PyMC-Marketing
+
+<div align="center">
+<iframe width="560" height="315" src="https://www.youtube.com/embed/zHhNkQ6A-NQ" title="Building a production-ready MMM pipeline with Fivetran and PyMC-Marketing" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+</div>
+
+A joint webinar with PyMC Labs and Fivetran demonstrating the complete MMM workflow—from automated data ingestion with Fivetran's connectors and dbt models, to Bayesian inference and budget optimization with PyMC-Marketing.
+
+---
+
 ## The Python Exchange: Streamline Python Package Release with GitHub
 
 <div align="center">
