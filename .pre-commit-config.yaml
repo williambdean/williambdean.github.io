@@ -1,0 +1,10 @@
+repos:
+  - repo: local
+    hooks:
+      - id: validate-blog-frontmatter
+        name: Validate blog post frontmatter
+        entry: uv run -- python scripts/validate-frontmatter.py
+        language: system
+        types: [markdown]
+        pass_filenames: false
+        stages: [pre-commit]

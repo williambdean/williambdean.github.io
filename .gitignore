@@ -2,3 +2,4 @@ site/
 docs/blog/posts/drafts/*
 .python-version
 __pycache__/
+.agents/
