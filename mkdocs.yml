@@ -68,6 +68,8 @@ nav:
   - Appearances: appearances.md
   - Blog:
       - blog/index.md
+      - 2026:
+          - blog/posts/2026/ipython-startup-scripts.md
       - 2025:
           - blog/posts/2025/automate-docs-with-marimo.md
           - blog/posts/2025/pytest-debugging.md
