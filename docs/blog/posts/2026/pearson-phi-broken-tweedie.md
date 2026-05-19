@@ -11,11 +11,11 @@ comments: true
 
 ## The Problem
 
-Insurance pure premium data has a distinctive shape: 90%+ of policies have zero claims, while the remaining few have positive amounts that are right-skewed and occasionally extreme. The Tweedie distribution is the standard tool for this setting — it naturally handles the zero-mass point and continuous positive tail through a single compound Poisson-Gamma process.
+Insurance pure premium data has a distinctive shape: 90%+ of policies have zero claims, while the remaining few have positive amounts that are right-skewed and occasionally extreme. The [Tweedie distribution](https://doi.org/10.1007/s11222-005-4070-y) is the standard tool for this setting — it naturally handles the zero-mass point and continuous positive tail through a single compound Poisson-Gamma process.
 
-Here is the paradox. A well-known blog post on Tweedie GLMs for insurance reported something strange: the posterior predictive check predicted **99.95% zeros** against an observed **~94%**. The model collapsed to almost-all-zero predictions. This is not because Tweedie is the wrong distribution — it is because the dispersion parameter φ was estimated using the wrong tool.
+Here is the paradox. A [well-known blog post on Tweedie GLMs for insurance](https://akshat.blog/posts/fitting-tweedie-models-to-claims-data/) reported something strange: the posterior predictive check predicted **99.95% zeros** against an observed **~94%**. The model collapsed to almost-all-zero predictions. This is not because Tweedie is the wrong distribution — it is because the dispersion parameter φ was estimated using the wrong tool.
 
-The default dispersion estimator in both R's `statmod::tweedie` and Python's `statsmodels` GLM is the **Pearson chi-squared statistic** divided by residual degrees of freedom. For zero-inflated data, this estimator is catastrophically biased — inflating φ by a factor of 5-56×. The consequence is a model that predicts nearly all zeros.
+The default dispersion estimator in both R's [`statmod::tweedie`](https://search.r-project.org/CRAN/refmans/statmod/html/tweedie.html) and Python's [`statsmodels` GLM](https://www.statsmodels.org/stable/glm.html) is the **Pearson chi-squared statistic** ([Wikipedia](https://en.wikipedia.org/wiki/Pearson%27s_chi-squared_test)) divided by residual degrees of freedom. For zero-inflated data, this estimator is catastrophically biased — inflating φ by a factor of 5-56×. The consequence is a model that predicts nearly all zeros.
 
 ## Why Pearson φ Fails
 
@@ -43,7 +43,7 @@ The MLE parameters are $10^{1000+}$ times more probable than the Pearson paramet
 
 ## The Fix: Series Log-PDF
 
-The reason practitioners reach for Pearson φ is that the Tweedie density does not have a closed form. The likelihood is an infinite series (Dunn & Smyth, 2005):
+The reason practitioners reach for Pearson φ is that the Tweedie density does not have a closed form. The likelihood is an infinite series ([Dunn & Smyth, 2005](https://doi.org/10.1007/s11222-005-4070-y)):
 
 $$ f(y; \mu, \phi, p) = \frac{1}{y} \sum_{j=1}^{\infty} W_j $$
 
@@ -97,9 +97,9 @@ This `tweedie_logp_series` function becomes the `logp` for the `Tweedie` CustomD
     ```
 
 !!! info "Validation Against Reference"
-    Our log-pdf matches the `tweedie` Python reference package to machine precision (all tested values show difference of exactly 0.000000). The implementation is verified for both datasets across the full support of the distribution.
+    Our log-pdf matches the [`tweedie` Python reference package](https://pypi.org/project/tweedie/) to machine precision (all tested values show difference of exactly 0.000000). The implementation is verified for both datasets across the full support of the distribution.
     
-    R users will recognize this series likelihood — `statmod::tweedie.profile()` estimates φ and p via MLE using the same Dunn & Smyth (2005) expansion. The Bayesian approach builds on that foundation, adding full posterior uncertainty and predictive distributions via MCMC instead of point estimates.
+    R users will recognize this series likelihood — [`statmod::tweedie.profile()`](https://www.rdocumentation.org/packages/tweedie/versions/2.3.5/topics/tweedie.profile) estimates φ and p via MLE using the same [Dunn & Smyth (2005)](https://doi.org/10.1007/s11222-005-4070-y) expansion. The Bayesian approach builds on that foundation, adding full posterior uncertainty and predictive distributions via MCMC instead of point estimates.
 
 Together, two functions power the `Tweedie` CustomDist wrapper below: `tweedie_logp_series` for the log-pdf (inference) and `tweedie_random` for random draws (posterior predictive sampling):
 
@@ -194,8 +194,8 @@ We fit the model on two canonical insurance datasets:
 
 | Dataset | Policies | Zero Rate | Weighted Mean |
 |---------|----------|-----------|---------------|
-| **dataCar** (De Jong & Heller 2008) | 67,856 | 93.2% | \$293 |
-| **French Motor TPL** (Akshat's setup, 60k subset) | 60,000 | 96.3% | \$207 |
+| **dataCar** ([De Jong & Heller 2008](https://doi.org/10.1017/CBO9780511755408)) | 67,856 | 93.2% | \$293 |
+| **French Motor TPL** ([Akshat's setup](https://akshat.blog/posts/fitting-tweedie-models-to-claims-data/), 60k subset) | 60,000 | 96.3% | \$207 |
 
 !!! note "Real Data vs Figure Scripts"
     The tables in this section contain results from fitting the Bayesian model to the actual dataCar and French TPL datasets. The figure scripts in the repository instead generate synthetic data from known Tweedie parameters that mimic these datasets — this keeps them self-contained and reproducible without requiring external data files. The figures illustrate the same phenomena (PPC quality, zero rate inflation, etc.) using parameter values matched to each dataset.
@@ -361,7 +361,7 @@ Dispersion remains virtually unchanged:
 | Intercept-only | 174.3 | 266.8 |
 | μ-GLM (22 / 7 features) | 174.9 | 265.9 |
 
-Model comparison via Watanabe–Akaike Information Criterion (WAIC) confirms that the extra covariates do not materially improve predictive fit:
+Model comparison via [Watanabe–Akaike Information Criterion (WAIC)](https://www.pymc.io/projects/docs/en/stable/api/generated/pymc.waic.html) confirms that the extra covariates do not materially improve predictive fit:
 
 | Model | WAIC | ΔWAIC | pWAIC | Weight |
 |-------|------|-------|-------|--------|
@@ -387,7 +387,7 @@ Three practical recommendations:
 ## Possible Extensions
 
 - **$p > 2$ for severity modeling** — the alternating sin series handles this case, though identifiability weakens
-- **BART for the mean structure** — nonparametric mean estimation via `pymc-bart` for automatic interaction and nonlinearity detection
+- **BART for the mean structure** — nonparametric mean estimation via [`pymc-bart`](https://www.pymc.io/projects/bart) for automatic interaction and nonlinearity detection
 - **Hurdle models** — separate models for claim frequency and severity for heavy-tailed data
 - **Double GLM (μ-φ DGLM)** — regressing dispersion $\phi$ on covariates could capture heteroskedasticity by risk class
 
