@@ -1522,9 +1522,9 @@
 
 <div><h1 id="pearson-is-broken-bayesian-tweedie-glms-for-insurance-pure-premiums">Pearson φ is Broken: Bayesian Tweedie GLMs for Insurance Pure Premiums</h1>
 <h2 id="the-problem">The Problem</h2>
-<p>Insurance pure premium data has a distinctive shape: 90%+ of policies have zero claims, while the remaining few have positive amounts that are right-skewed and occasionally extreme. The Tweedie distribution is the standard tool for this setting — it naturally handles the zero-mass point and continuous positive tail through a single compound Poisson-Gamma process.</p>
-<p>Here is the paradox. A well-known blog post on Tweedie GLMs for insurance reported something strange: the posterior predictive check predicted <strong>99.95% zeros</strong> against an observed <strong>~94%</strong>. The model collapsed to almost-all-zero predictions. This is not because Tweedie is the wrong distribution — it is because the dispersion parameter φ was estimated using the wrong tool.</p>
-<p>The default dispersion estimator in both R's <code>statmod::tweedie</code> and Python's <code>statsmodels</code> GLM is the <strong>Pearson chi-squared statistic</strong> divided by residual degrees of freedom. For zero-inflated data, this estimator is catastrophically biased — inflating φ by a factor of 5-56×. The consequence is a model that predicts nearly all zeros.</p>
+<p>Insurance pure premium data has a distinctive shape: 90%+ of policies have zero claims, while the remaining few have positive amounts that are right-skewed and occasionally extreme. The <a href="https://doi.org/10.1007/s11222-005-4070-y">Tweedie distribution</a> is the standard tool for this setting — it naturally handles the zero-mass point and continuous positive tail through a single compound Poisson-Gamma process.</p>
+<p>Here is the paradox. A <a href="https://akshat.blog/posts/fitting-tweedie-models-to-claims-data/">well-known blog post on Tweedie GLMs for insurance</a> reported something strange: the posterior predictive check predicted <strong>99.95% zeros</strong> against an observed <strong>~94%</strong>. The model collapsed to almost-all-zero predictions. This is not because Tweedie is the wrong distribution — it is because the dispersion parameter φ was estimated using the wrong tool.</p>
+<p>The default dispersion estimator in both R's <a href="https://search.r-project.org/CRAN/refmans/statmod/html/tweedie.html"><code>statmod::tweedie</code></a> and Python's <a href="https://www.statsmodels.org/stable/glm.html"><code>statsmodels</code> GLM</a> is the <strong>Pearson chi-squared statistic</strong> (<a href="https://en.wikipedia.org/wiki/Pearson%27s_chi-squared_test">Wikipedia</a>) divided by residual degrees of freedom. For zero-inflated data, this estimator is catastrophically biased — inflating φ by a factor of 5-56×. The consequence is a model that predicts nearly all zeros.</p>
 <h2 id="why-pearson-fails">Why Pearson φ Fails</h2>
 <p>The Pearson dispersion estimate is:</p>
 <div class="arithmatex">\[ \hat{\phi}_{\text{Pearson}} = \frac{1}{n-p} \sum_{i=1}^n \frac{(y_i - \hat{\mu}_i)^2}{V(\hat{\mu}_i)} \]</div>
@@ -1565,7 +1565,7 @@
 <p>The log-likelihood difference ΔLL is not just a statistical nicety. It directly translates to predictive performance. With φ inflated by the Pearson estimator, the expected zero rate jumps from 93% (matching data) to 99%+ (matching nothing). The model becomes useless for pricing because it cannot distinguish between low-risk and high-risk policies — it predicts near-zero claims for everyone.</p>
 </details>
 <h2 id="the-fix-series-log-pdf">The Fix: Series Log-PDF</h2>
-<p>The reason practitioners reach for Pearson φ is that the Tweedie density does not have a closed form. The likelihood is an infinite series (Dunn &amp; Smyth, 2005):</p>
+<p>The reason practitioners reach for Pearson φ is that the Tweedie density does not have a closed form. The likelihood is an infinite series (<a href="https://doi.org/10.1007/s11222-005-4070-y">Dunn &amp; Smyth, 2005</a>):</p>
 <div class="arithmatex">\[ f(y; \mu, \phi, p) = \frac{1}{y} \sum_{j=1}^{\infty} W_j \]</div>
 <p>where <span class="arithmatex">\(W_j\)</span> involves gamma functions and power terms. This looks intimidating, but in log-space with a modest number of terms (20 is plenty), it evaluates cleanly:</p>
 <div class="highlight"><span class="filename">Tweedie log-pdf via series expansion (PyTensor)</span><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">pytensor</span>
@@ -1613,8 +1613,8 @@
 </div>
 <div class="admonition info">
 <p class="admonition-title">Validation Against Reference</p>
-<p>Our log-pdf matches the <code>tweedie</code> Python reference package to machine precision (all tested values show difference of exactly 0.000000). The implementation is verified for both datasets across the full support of the distribution.</p>
-<p>R users will recognize this series likelihood — <code>statmod::tweedie.profile()</code> estimates φ and p via MLE using the same Dunn &amp; Smyth (2005) expansion. The Bayesian approach builds on that foundation, adding full posterior uncertainty and predictive distributions via MCMC instead of point estimates.</p>
+<p>Our log-pdf matches the <a href="https://pypi.org/project/tweedie/"><code>tweedie</code> Python reference package</a> to machine precision (all tested values show difference of exactly 0.000000). The implementation is verified for both datasets across the full support of the distribution.</p>
+<p>R users will recognize this series likelihood — <a href="https://www.rdocumentation.org/packages/tweedie/versions/2.3.5/topics/tweedie.profile"><code>statmod::tweedie.profile()</code></a> estimates φ and p via MLE using the same <a href="https://doi.org/10.1007/s11222-005-4070-y">Dunn &amp; Smyth (2005)</a> expansion. The Bayesian approach builds on that foundation, adding full posterior uncertainty and predictive distributions via MCMC instead of point estimates.</p>
 </div>
 <p>Together, two functions power the <code>Tweedie</code> CustomDist wrapper below: <code>tweedie_logp_series</code> for the log-pdf (inference) and <code>tweedie_random</code> for random draws (posterior predictive sampling):</p>
 <div class="admonition note">
@@ -1724,13 +1724,13 @@
 </thead>
 <tbody>
 <tr>
-<td><strong>dataCar</strong> (De Jong &amp; Heller 2008)</td>
+<td><strong>dataCar</strong> (<a href="https://doi.org/10.1017/CBO9780511755408">De Jong &amp; Heller 2008</a>)</td>
 <td>67,856</td>
 <td>93.2%</td>
 <td>$293</td>
 </tr>
 <tr>
-<td><strong>French Motor TPL</strong> (Akshat's setup, 60k subset)</td>
+<td><strong>French Motor TPL</strong> (<a href="https://akshat.blog/posts/fitting-tweedie-models-to-claims-data/">Akshat's setup</a>, 60k subset)</td>
 <td>60,000</td>
 <td>96.3%</td>
 <td>$207</td>
@@ -1956,7 +1956,7 @@
 </tr>
 </tbody>
 </table>
-<p>Model comparison via Watanabe–Akaike Information Criterion (WAIC) confirms that the extra covariates do not materially improve predictive fit:</p>
+<p>Model comparison via <a href="https://www.pymc.io/projects/docs/en/stable/api/generated/pymc.waic.html">Watanabe–Akaike Information Criterion (WAIC)</a> confirms that the extra covariates do not materially improve predictive fit:</p>
 <table>
 <thead>
 <tr>
@@ -1998,7 +1998,7 @@
 <h2 id="possible-extensions">Possible Extensions</h2>
 <ul>
 <li><strong><span class="arithmatex">\(p &gt; 2\)</span> for severity modeling</strong> — the alternating sin series handles this case, though identifiability weakens</li>
-<li><strong>BART for the mean structure</strong> — nonparametric mean estimation via <code>pymc-bart</code> for automatic interaction and nonlinearity detection</li>
+<li><strong>BART for the mean structure</strong> — nonparametric mean estimation via <a href="https://www.pymc.io/projects/bart"><code>pymc-bart</code></a> for automatic interaction and nonlinearity detection</li>
 <li><strong>Hurdle models</strong> — separate models for claim frequency and severity for heavy-tailed data</li>
 <li><strong>Double GLM (μ-φ DGLM)</strong> — regressing dispersion <span class="arithmatex">\(\phi\)</span> on covariates could capture heteroskedasticity by risk class</li>
 </ul>
@@ -2042,7 +2042,7 @@
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="May 19, 2026 19:40:53">May 19, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="May 19, 2026 20:07:11">May 19, 2026</span>
   </span>
 
     
