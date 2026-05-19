@@ -24,7 +24,7 @@ n_obs = 10000
 
 datasets = [
     {"name": "dataCar-like", "mu": 293.0, "phi": 174.0, "p": 1.574, "n": n_obs},
-    {"name": "French TPL-like", "mu": 207.0, "phi": 267.0, "p": 1.633, "n": n_obs},
+    {"name": "High-Inflation-like", "mu": 218.0, "phi": 800.0, "p": 1.633, "n": n_obs},
 ]
 
 fig, axes = plt.subplots(1, 2, figsize=(14, 5))

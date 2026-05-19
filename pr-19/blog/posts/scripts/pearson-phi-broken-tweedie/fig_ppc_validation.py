@@ -31,27 +31,13 @@ ppc_data = {
         "ci_low": [0.930, 8_806_246, 18_595, 4397],
         "ci_high": [0.935, 9_964_676, 37_065, 4761],
     },
-    "French TPL (Intercept)": {
-        "statistics": ["Zero Rate", "Total Claim", "Max Claim", "N Nonzero"],
-        "observed": [0.963, 6_540_679, 1_404_186, 2237],
-        "predicted": [0.963, 6_520_860, 35_413, 2216],
-        "ci_low": [0.961, 5_908_420, 25_912, 2092],
-        "ci_high": [0.965, 7_195_012, 50_532, 2339],
-    },
-    "French TPL (GLM)": {
-        "statistics": ["Zero Rate", "Total Claim", "Max Claim", "N Nonzero"],
-        "observed": [0.963, 6_540_679, 1_404_186, 2237],
-        "predicted": [0.963, 6_663_320, 103_702, 2220],
-        "ci_low": [0.961, 5_989_462, 45_447, 2097],
-        "ci_high": [0.965, 7_573_082, 257_210, 2357],
-    },
 }
 
-fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
 colors = ["#4C72B0", "#DD8452"]
 
-for row_idx, (name, data) in enumerate(ppc_data.items()):
-    ax = axes[row_idx // 2][row_idx % 2]
+for idx, (name, data) in enumerate(ppc_data.items()):
+    ax = axes[idx]
     stats = data["statistics"]
     x = np.arange(len(stats))
     width = 0.35
@@ -90,7 +76,7 @@ for row_idx, (name, data) in enumerate(ppc_data.items()):
                 ha="center", va="bottom", fontsize=7)
 
 plt.suptitle("Posterior Predictive Check: Observed vs Predicted",
-             fontsize=13, y=1.01)
+             fontsize=13, y=1.02)
 plt.tight_layout()
 plt.savefig(OUT_DIR / "fig_ppc_validation.png", dpi=150, bbox_inches="tight")
 plt.close()
