@@ -47,7 +47,7 @@ rng = np.random.default_rng(42)
 
 datasets = [
     {"name": "dataCar", "mu": 293.0, "phi": 174.0, "p": 1.574, "n": 15000},
-    {"name": "French TPL", "mu": 207.0, "phi": 267.0, "p": 1.633, "n": 15000},
+    {"name": "High-Inflation", "mu": 218.0, "phi": 800.0, "p": 1.633, "n": 15000},
 ]
 
 fig, axes = plt.subplots(1, 2, figsize=(12, 5))

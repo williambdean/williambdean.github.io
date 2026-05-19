@@ -2,7 +2,7 @@
 # dependencies = ["matplotlib", "numpy"]
 # ///
 
-"""Figure 3: Zero rate comparison — MLE vs Pearson vs Akshat vs Observed.
+"""Figure 3: Zero rate comparison — MLE vs Pearson vs Observed.
 
 Shows how the Pearson dispersion estimator systematically over-predicts
 the zero rate compared to MLE and observed data.
@@ -16,17 +16,16 @@ import numpy as np
 OUT_DIR = Path(__file__).parents[2] / "images"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-datasets = ["dataCar", "French TPL"]
-models = ["Observed", "MLE\n(Bayesian)", "Pearson\n(statsmodels)", "Akshat\n(R GLM)"]
+datasets = ["dataCar"]
+models = ["Observed", "Posterior\nMean", "Pearson\n(statsmodels)"]
 
 zero_rates = np.array([
-    [0.932, 0.932, 0.990, np.nan],      # dataCar
-    [0.963, 0.963, 0.9994, 0.9995],      # French TPL
+    [0.932, 0.932, 0.990],      # dataCar
 ])
 
 colors = ["#2E86AB", "#A23B72", "#F18F01", "#C73E1D"]
 
-fig, ax = plt.subplots(figsize=(10, 5))
+fig, ax = plt.subplots(figsize=(7, 5))
 x = np.arange(len(datasets))
 width = 0.18
 

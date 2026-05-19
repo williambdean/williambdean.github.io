@@ -22,7 +22,7 @@ rng = np.random.default_rng(42)
 datasets = [
     {"name": "dataCar", "mu": 293.0, "phi": 174.0, "p": 1.574,
      "phi_se": 4.5, "p_se": 0.004, "n_chains": 4, "n_draws": 1000},
-    {"name": "French TPL", "mu": 207.0, "phi": 267.0, "p": 1.633,
+    {"name": "High-Inflation", "mu": 218.0, "phi": 800.0, "p": 1.633,
      "phi_se": 8.0, "p_se": 0.006, "n_chains": 4, "n_draws": 1000},
 ]
 
@@ -106,7 +106,7 @@ plt.close()
 print(f"Saved {OUT_DIR / 'fig_posterior_pairs.png'}")
 
 # --- Second figure: (φ, p) joint distribution with 2D density ---
-fig2, axes2 = plt.subplots(1, 2, figsize=(12, 5), constrained_layout=True)
+fig2, axes2 = plt.subplots(1, 2, figsize=(12, 5))
 
 for ax, ds in zip(axes2, datasets):
     name = ds["name"]
@@ -129,7 +129,7 @@ for ax, ds in zip(axes2, datasets):
     ax.set_ylabel("p (power)")
     ax.set_title(f"{name}\nCorr(φ, p) = {np.corrcoef(phi_samples, p_samples)[0, 1]:.2f}",
                  fontsize=10)
-    ax.legend(fontsize=8)
+    ax.legend(fontsize=8, loc="upper left")
 
     # Credible ellipse (approx 95%)
     from matplotlib.patches import Ellipse
@@ -145,11 +145,11 @@ for ax, ds in zip(axes2, datasets):
     ax.set_xlim(phi_true * 0.7, phi_true * 1.3)
     ax.set_ylim(p_true - 0.02, p_true + 0.02)
 
-plt.suptitle("Joint (φ, p) Posterior Distribution\n"
-             "Tight, well-centered posteriors — no φ-p tradeoff pathology",
-             fontsize=12, y=1.02)
-cbar = plt.colorbar(hb, ax=axes2, shrink=0.6)
+fig2.suptitle("Joint (φ, p) Posterior Distribution\n"
+              "Tight, well-centered posteriors — no φ-p tradeoff pathology",
+              fontsize=12, y=1.02)
+cbar = fig2.colorbar(hb, ax=axes2, shrink=0.6, pad=0.02)
 cbar.set_label("Density")
-plt.savefig(OUT_DIR / "fig_posterior_pairs_joint.png", dpi=150, bbox_inches="tight")
-plt.close()
+fig2.savefig(OUT_DIR / "fig_posterior_pairs_joint.png", dpi=150, bbox_inches="tight")
+plt.close(fig2)
 print(f"Saved {OUT_DIR / 'fig_posterior_pairs_joint.png'}")
