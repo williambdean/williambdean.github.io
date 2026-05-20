@@ -56,6 +56,13 @@ import pytensor.tensor as pt
 
 
 def tweedie_logp_series(value, mu, phi, p, n_terms=20):
+    """Tweedie log-pdf via series expansion (Dunn & Smyth 2005).
+
+    Uses plain PyTensor ops for PyMC 6.0 compatibility: xtensor's
+    named axes require dims metadata that PyMC 6.0 strips during
+    broadcasting. Plain tensor ops handle scalar-vector broadcasting
+    without dims information.
+    """
     j = pt.arange(1, n_terms + 1, dtype=pytensor.config.floatX).reshape((-1, 1))
     alpha = (2 - p) / (p - 1)
 
@@ -128,16 +135,15 @@ def tweedie_random(mu, phi, p, rng=None, size=None):
 With the log-pdf and random sampler in hand, building the model is straightforward. We place weakly informative priors on the parameters and wrap both functions into a `CustomDist`: the log-pdf for MCMC inference and the random sampler for posterior predictive checks.
 
 ```python title="Tweedie CustomDist wrapper"
-class Tweedie:
-    @staticmethod
-    def tweedie_dist(mu, phi, p, size):
-        return tweedie_random(mu, phi, p, size=size)
+import pymc as pm
+from pymc import CustomDist
 
+class Tweedie:
     def __new__(cls, name, mu, phi, p, **kwargs):
         return CustomDist(
             name, mu, phi, p,
-            dist=cls.tweedie_dist,
             logp=tweedie_logp_series,
+            random=tweedie_random,
             class_name="Tweedie",
             **kwargs,
         )
@@ -245,7 +251,7 @@ The (φ, p) joint distribution reveals no pathological tradeoff:
 
 The 95% credible ellipse is well-centered on the true (MLE) values with moderate positive correlation: higher φ means slightly higher p, but the correlation is weak (≈ 0.3). This is the expected pattern — a larger dispersion naturally pairs with a slightly higher power parameter since both push in the same direction (more variance). The key point is that the posterior is **not** degenerate along the φ-p diagonal, confirming both parameters are separately identifiable from the data.
 
-Posterior predictive checks (PPC) are a critical validation step in Bayesian workflow. Because the `Tweedie` wrapper provides `tweedie_dist` as the `dist` argument to `CustomDist`, PyMC handles posterior predictive sampling automatically:
+Posterior predictive checks (PPC) are a critical validation step in Bayesian workflow. Because the `Tweedie` wrapper provides `tweedie_random` as the `random` argument to `CustomDist`, PyMC handles posterior predictive sampling automatically:
 
 ```python title="Posterior predictive check — using pm.sample_posterior_predictive"
 with model:
@@ -267,7 +273,7 @@ obs_stats = {
 }
 ```
 
-The key point: `tweedie_dist` defined in the `Tweedie` class is what `sample_posterior_predictive` uses under the hood to generate draws — no manual thinning or re-sampling needed.
+The key point: `tweedie_random` defined in the `Tweedie` class is what `sample_posterior_predictive` uses under the hood to generate draws — no manual thinning or re-sampling needed.
 
 #### Moment Validation
 
