@@ -195,16 +195,11 @@ zero_rate = np.exp(-lam)
 
 The 95% prior intervals comfortably cover the observed values. The priors are weak enough that the data drives the posterior, but informative enough to keep sampling in a reasonable region — no need for tight constraints. Sensitivity checks (widening or shifting the priors) produce the same posterior estimates, confirming the data dominates.
 
-## Results: Intercept-Only
+But how much does the posterior actually tighten relative to these priors? We can compare the full prior and posterior distributions directly:
 
-We fit the model on the canonical dataCar insurance dataset:
+![Prior vs Posterior: 5000 synthetic Tweedie observations tighten all parameter distributions.](../images/fig_prior_posterior.png)
 
-| Dataset | Policies | Zero Rate | Weighted Mean |
-|---------|----------|-----------|---------------|
-| **dataCar** ([De Jong & Heller 2008](https://doi.org/10.1017/CBO9780511755408)) | 67,856 | 93.2% | \$293 |
-
-!!! note "Real Data vs Figure Scripts"
-    The tables in this section contain results from fitting the Bayesian model to the actual dataCar dataset. The figure scripts in the repository instead generate synthetic data from known Tweedie parameters that mimic this dataset — this keeps them self-contained and reproducible without requiring external data files. The figures illustrate the same phenomena (PPC quality, zero rate inflation, etc.) using parameter values matched to this dataset.
+The message is clear: 5,000 observations (one order of magnitude smaller than our actual dataset) already transform diffuse priors into tightly constrained posteriors across all parameters. The posterior standard deviation shrinks by orders of magnitude relative to the prior — the data easily overpowers the weak informativeness we encoded. For the full dataCar dataset (67,856 policies), the posteriors would be tighter still.
 
 ### Parameter Estimates
 
