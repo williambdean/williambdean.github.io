@@ -140,7 +140,8 @@ def tweedie_dist(mu, phi, p):
     return px.math.where(N > 0, Y, 0.0)
 
 
-This exploits a key property of the Gamma distribution: the sum of $N$ i.i.d. $\text{Gamma}(\alpha, \beta)$ variables is $\text{Gamma}(N \cdot \alpha, \beta)$. So instead of summing $N$ individual Gamma draws, we draw a single Gamma with shape $N \cdot \alpha_{\text{term}}$. When $N = 0$, the `where` returns 0 — the point mass at zero that characterizes the Tweedie.
+!!! tip "Gamma Sum Property"
+    This exploits a key property of the Gamma distribution: the sum of $N$ i.i.d. $\text{Gamma}(\alpha, \beta)$ variables is $\text{Gamma}(N \cdot \alpha, \beta)$. So instead of summing $N$ individual Gamma draws, we draw a single Gamma with shape $N \cdot \alpha_{\text{term}}$. When $N = 0$, the `where` returns 0 — the point mass at zero that characterizes the Tweedie.
 
 class Tweedie:
     def __new__(cls, name, mu, phi, p, **kwargs):
