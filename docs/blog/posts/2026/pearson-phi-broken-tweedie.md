@@ -4,9 +4,7 @@ tags:
     - Python
     - PyMC
     - Data Analysis
-    - actuarial
-    - insurance
-    - pure-premium
+    - Insurance
 comments: true
 ---
 
