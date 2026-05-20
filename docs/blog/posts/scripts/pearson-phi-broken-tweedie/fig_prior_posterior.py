@@ -6,7 +6,8 @@
 
 Shows how much the data constrains each parameter (mu, phi, p) by running
 actual PyMC sampling on synthetic Tweedie data and comparing prior vs posterior
-distributions using az.plot_prior_posterior.
+distributions using az.plot_prior_posterior. Uses pymc.dims with xtensor-based
+logp and compound dist.
 """
 
 from pathlib import Path
@@ -15,9 +16,11 @@ import arviz as az
 import matplotlib.pyplot as plt
 import numpy as np
 import pymc as pm
+import pymc.dims as pmd
 import pytensor
 import pytensor.tensor as pt
-from pymc import CustomDist
+import pytensor.xtensor as px
+from pytensor.xtensor import as_xtensor
 
 from tweedie_utils import tweedie_random
 
@@ -26,36 +29,51 @@ OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def tweedie_logp_series(value, mu, phi, p, n_terms=20):
-    """Tweedie log-pdf via series expansion (Dunn & Smyth 2005)."""
-    j = pt.arange(1, n_terms + 1, dtype=pytensor.config.floatX).reshape((-1, 1))
+    """Tweedie log-pdf via series expansion (Dunn & Smyth 2005).
+
+    Uses pytensor.xtensor operations throughout.
+    """
+    j = as_xtensor(
+        pt.arange(1, n_terms + 1, dtype=pytensor.config.floatX),
+        dims=("term",),
+    )
     alpha = (2 - p) / (p - 1)
 
-    log_v = pt.log(pt.switch(pt.gt(value, 1e-9), value, 1.0))
+    log_v = px.math.log(px.math.where(value > 1e-9, value, 1.0))
     ll_core = (
-        (value * pt.pow(mu, 1 - p) / (1 - p) - pt.pow(mu, 2 - p) / (2 - p))
-        / phi
+        (value * mu ** (1 - p) / (1 - p) - mu ** (2 - p) / (2 - p)) / phi
     )
 
     log_Wj = (
         j * alpha * log_v
-        - j * (1 + alpha) * pt.log(phi)
-        - j * pt.log(pt.abs(2 - p))
-        - j * alpha * pt.log(p - 1)
-        - pt.gammaln(j + 1)
-        - pt.gammaln(pt.maximum(j * alpha, 1e-10))
+        - j * (1 + alpha) * px.math.log(phi)
+        - j * px.math.log(abs(2 - p))
+        - j * alpha * px.math.log(p - 1)
+        - px.math.gammaln(j + 1)
+        - px.math.gammaln(px.math.maximum(j * alpha, 1e-10))
     )
-    log_a = pt.log(pt.sum(pt.exp(log_Wj), axis=0)) - log_v
+    log_a = px.math.log((px.math.exp(log_Wj)).sum(dim="term")) - log_v
     logp_pos = ll_core + log_a
-    logp_zero = -pt.pow(mu, 2 - p) / (phi * (2 - p))
-    return pt.switch(pt.le(value, 1e-9), logp_zero, logp_pos)
+    logp_zero = -(mu ** (2 - p)) / (phi * (2 - p))
+    return px.math.where(value <= 1e-9, logp_zero, logp_pos)
+
+
+def tweedie_dist(mu, phi, p):
+    """Tweedie random draws via Poisson-Gamma compound (p ∈ (1, 2))."""
+    lam = mu ** (2 - p) / (phi * (2 - p))
+    alpha_term = (2 - p) / (p - 1)
+    beta = phi * (p - 1) * mu ** (p - 1)
+    N = pmd.Poisson.dist(mu=lam)
+    Y = pmd.Gamma.dist(alpha=px.math.maximum(N * alpha_term, 1e-10), beta=beta)
+    return px.math.where(N > 0, Y, 0.0)
 
 
 class Tweedie:
     def __new__(cls, name, mu, phi, p, **kwargs):
-        return CustomDist(
+        return pmd.CustomDist(
             name, mu, phi, p,
+            dist=tweedie_dist,
             logp=tweedie_logp_series,
-            random=tweedie_random,
             class_name="Tweedie",
             **kwargs,
         )
@@ -64,15 +82,15 @@ class Tweedie:
 def build_model(y):
     coords = {"obs": np.arange(len(y))}
     with pm.Model(coords=coords) as model:
-        log_mu = pm.Normal("log_mu",
-                           mu=np.log(max(y.mean(), 1)), sigma=1)
-        mu = pm.Deterministic("mu", pt.exp(log_mu))
+        log_mu = pmd.Normal("log_mu",
+                            mu=np.log(max(y.mean(), 1)), sigma=1)
+        mu = pmd.Deterministic("mu", px.math.exp(log_mu))
 
-        log_phi = pm.Normal("log_phi", mu=0, sigma=1)
-        phi = pm.Deterministic("phi", pt.exp(log_phi))
+        log_phi = pmd.Normal("log_phi", mu=0, sigma=1)
+        phi = pmd.Deterministic("phi", px.math.exp(log_phi))
 
-        p_logit = pm.Normal("p_logit", mu=-0.5, sigma=0.5)
-        p = pm.Deterministic("p", 1.1 + 0.8 * pm.math.sigmoid(p_logit))
+        p_logit = pmd.Normal("p_logit", mu=-0.5, sigma=0.5)
+        p = pmd.Deterministic("p", 1.1 + 0.8 * pmd.math.sigmoid(p_logit))
 
         Tweedie("y_obs", mu=mu, phi=phi, p=p, observed=y, dims="obs")
     return model

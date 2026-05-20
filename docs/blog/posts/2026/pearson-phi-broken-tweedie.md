@@ -50,49 +50,53 @@ $$ f(y; \mu, \phi, p) = \frac{1}{y} \sum_{j=1}^{\infty} W_j $$
 
 where $W_j$ involves gamma functions and power terms. This looks intimidating, but in log-space with a modest number of terms (20 is plenty), it evaluates cleanly:
 
-```python title="Tweedie log-pdf via series expansion (PyTensor)"
+```python title="Tweedie log-pdf via series expansion (pytensor.xtensor)"
 import pytensor
 import pytensor.tensor as pt
+import pytensor.xtensor as px
+from pytensor.xtensor import as_xtensor
 
 
 def tweedie_logp_series(value, mu, phi, p, n_terms=20):
     """Tweedie log-pdf via series expansion (Dunn & Smyth 2005).
 
-    Uses plain PyTensor ops for PyMC 6.0 compatibility: xtensor's
-    named axes require dims metadata that PyMC 6.0 strips during
-    broadcasting. Plain tensor ops handle scalar-vector broadcasting
-    without dims information.
+    Uses pytensor.xtensor operations throughout. Dim-name broadcasting
+    replaces manual reshapes — ``j`` with dims ``("term",)`` and
+    ``value`` with dims ``("obs",)`` broadcast to ``("term", "obs")``.
     """
-    j = pt.arange(1, n_terms + 1, dtype=pytensor.config.floatX).reshape((-1, 1))
+    j = as_xtensor(
+        pt.arange(1, n_terms + 1, dtype=pytensor.config.floatX),
+        dims=("term",),
+    )
     alpha = (2 - p) / (p - 1)
 
-    log_v = pt.log(pt.switch(pt.gt(value, 1e-9), value, 1.0))
+    log_v = px.math.log(px.math.where(value > 1e-9, value, 1.0))
     ll_core = (
-        (value * pt.pow(mu, 1 - p) / (1 - p) - pt.pow(mu, 2 - p) / (2 - p))
-        / phi
+        (value * mu ** (1 - p) / (1 - p) - mu ** (2 - p) / (2 - p)) / phi
     )
 
     log_Wj = (
         j * alpha * log_v
-        - j * (1 + alpha) * pt.log(phi)
-        - j * pt.log(pt.abs(2 - p))
-        - j * alpha * pt.log(p - 1)
-        - pt.gammaln(j + 1)
-        - pt.gammaln(pt.maximum(j * alpha, 1e-10))
+        - j * (1 + alpha) * px.math.log(phi)
+        - j * px.math.log(abs(2 - p))
+        - j * alpha * px.math.log(p - 1)
+        - px.math.gammaln(j + 1)
+        - px.math.gammaln(px.math.maximum(j * alpha, 1e-10))
     )
-    log_a = pt.log(pt.sum(pt.exp(log_Wj), axis=0)) - log_v
+    log_a = px.math.log((px.math.exp(log_Wj)).sum(dim="term")) - log_v
     logp_pos = ll_core + log_a
-    logp_zero = -pt.pow(mu, 2 - p) / (phi * (2 - p))
-    return pt.switch(pt.le(value, 1e-9), logp_zero, logp_pos)
+    logp_zero = -(mu ** (2 - p)) / (phi * (2 - p))
+    return px.math.where(value <= 1e-9, logp_zero, logp_pos)
 ```
 
 The key implementation choices:
 
 - **Everything in log-space** — avoids underflow from the tiny density values
-- **`logsumexp` for series summation** — numerically stable aggregation
+- **`sum(dim="term")` for series summation** — named dimension reduction instead of `axis=0`
 - **`maximum` for gamma function inputs** — prevents domain errors at alpha near zero
+- **Dim-name broadcasting** — ``j`` with dims ``("term",)`` and ``value`` with dims ``("obs",)`` broadcast naturally to ``("term", "obs")``, replacing the manual ``reshape((-1, 1))`` needed in the tensor version
 
-This `tweedie_logp_series` function becomes the `logp` for the `Tweedie` CustomDist wrapper below — it is what MCMC uses to evaluate the likelihood of observed data at each step.
+This `tweedie_logp_series` function becomes the `logp` for the `Tweedie` wrapper below — it is what MCMC uses to evaluate the likelihood of observed data at each step.
 
 !!! tip "Series Convergence"
     The series converges rapidly for the parameter range we encounter ($p \in (1.1, 1.9)$, typical claim sizes). Even 5 terms match 100 terms to machine precision across this range. The default of 20 terms gives a generous safety margin. For extreme cases near $p=1.01$ or $p=1.99$, convergence slows and more terms may be needed — in practice these edge cases are rare in insurance data.
@@ -109,41 +113,43 @@ This `tweedie_logp_series` function becomes the `logp` for the `Tweedie` CustomD
     
     R users will recognize this series likelihood — [`statmod::tweedie.profile()`](https://www.rdocumentation.org/packages/tweedie/versions/2.3.5/topics/tweedie.profile) estimates φ and p via MLE using the same [Dunn & Smyth (2005)](https://doi.org/10.1007/s11222-005-4070-y) expansion. The Bayesian approach builds on that foundation, adding full posterior uncertainty and predictive distributions via MCMC instead of point estimates.
 
-Together, two functions power the `Tweedie` CustomDist wrapper below: `tweedie_logp_series` for the log-pdf (inference) and `tweedie_random` for random draws (posterior predictive sampling):
+The `tweedie_logp_series` function powers MCMC inference. For sampling (posterior predictive checks), `pmd.CustomDist` uses the symbolic `tweedie_dist` function defined in the wrapper below — it compiles the compound Poisson-Gamma graph for draws.
 
 !!! note "Exposure Weights in Practice"
     Insurance applications use exposure weights via $\phi_i = \phi / w_i$ — a policy with half-year exposure should contribute less variance than a full-year one. The unweighted functions here assume uniform exposure. See the full weighted implementation in the repo.
-
-```python title="Tweedie random sampler via Poisson-Gamma compound"
-def tweedie_random(mu, phi, p, rng=None, size=None):
-    """Tweedie random draws via Poisson-Gamma compound (p ∈ (1, 2))."""
-    if p >= 2:
-        raise ValueError(f"tweedie_random requires p ∈ (1, 2), got p={p}")
-    if rng is None:
-        rng = np.random.default_rng()
-    lam = (mu ** (2 - p)) / (phi * (2 - p))
-    N = np.maximum(rng.poisson(lam, size=size), 0)
-    alpha = (2 - p) / (p - 1)
-    theta = phi * (p - 1) * (mu ** (p - 1))
-    shape_param = np.where(N > 0, N * alpha, 1e-9)
-    res = rng.gamma(shape=shape_param, scale=theta)
-    return np.where(N > 0, res, 0.0)
-```
 
 ### The Bayesian Model
 
 With the log-pdf and random sampler in hand, building the model is straightforward. We place weakly informative priors on the parameters and wrap both functions into a `CustomDist`: the log-pdf for MCMC inference and the random sampler for posterior predictive checks.
 
-```python title="Tweedie CustomDist wrapper"
+```python title="Tweedie wrapper using pymc.dims with compound dist + series logp"
 import pymc as pm
-from pymc import CustomDist
+import pymc.dims as pmd
+import pytensor.xtensor as px
+
+
+def tweedie_dist(mu, phi, p):
+    """Tweedie random draws via Poisson-Gamma compound (p ∈ (1, 2)).
+
+    Symbolic dist function for pmd.CustomDist: receives XTensorVariable
+    params and returns a compound expression used for automatic sampling.
+    """
+    lam = mu ** (2 - p) / (phi * (2 - p))
+    alpha_term = (2 - p) / (p - 1)
+    beta = phi * (p - 1) * mu ** (p - 1)
+    N = pmd.Poisson.dist(mu=lam)
+    Y = pmd.Gamma.dist(alpha=px.math.maximum(N * alpha_term, 1e-10), beta=beta)
+    return px.math.where(N > 0, Y, 0.0)
+
+
+This exploits a key property of the Gamma distribution: the sum of $N$ i.i.d. $\text{Gamma}(\alpha, \beta)$ variables is $\text{Gamma}(N \cdot \alpha, \beta)$. So instead of summing $N$ individual Gamma draws, we draw a single Gamma with shape $N \cdot \alpha_{\text{term}}$. When $N = 0$, the `where` returns 0 — the point mass at zero that characterizes the Tweedie.
 
 class Tweedie:
     def __new__(cls, name, mu, phi, p, **kwargs):
-        return CustomDist(
+        return pmd.CustomDist(
             name, mu, phi, p,
+            dist=tweedie_dist,
             logp=tweedie_logp_series,
-            random=tweedie_random,
             class_name="Tweedie",
             **kwargs,
         )
@@ -152,17 +158,17 @@ class Tweedie:
 def build_intercept_only_model(y, p_range=(1.1, 1.9)):
     coords = {"obs": np.arange(len(y))}
     with pm.Model(coords=coords) as model:
-        log_mu = pm.Normal("log_mu",
-                           mu=np.log(max(y.mean(), 1)), sigma=1)
-        mu = pm.Deterministic("mu", pt.exp(log_mu))
+        log_mu = pmd.Normal("log_mu",
+                            mu=np.log(max(y.mean(), 1)), sigma=1)
+        mu = pmd.Deterministic("mu", px.math.exp(log_mu))
 
-        log_phi = pm.Normal("log_phi", mu=5.0, sigma=2.0)
-        phi = pm.Deterministic("phi", pt.exp(log_phi))
+        log_phi = pmd.Normal("log_phi", mu=0, sigma=1)
+        phi = pmd.Deterministic("phi", px.math.exp(log_phi))
 
-        p_logit = pm.Normal("p_logit", mu=0, sigma=1.5)
-        p = pm.Deterministic("p",
+        p_logit = pmd.Normal("p_logit", mu=-0.5, sigma=0.5)
+        p = pmd.Deterministic("p",
             p_range[0] + (p_range[1] - p_range[0])
-            * pm.math.sigmoid(p_logit))
+            * pmd.math.sigmoid(p_logit))
 
         Tweedie("y_obs", mu=mu, phi=phi, p=p, observed=y, dims="obs")
     return model
@@ -246,7 +252,7 @@ The (φ, p) joint distribution reveals no pathological tradeoff:
 
 The 95% credible ellipse is well-centered on the true (MLE) values with moderate positive correlation: higher φ means slightly higher p, but the correlation is weak (≈ 0.3). This is the expected pattern — a larger dispersion naturally pairs with a slightly higher power parameter since both push in the same direction (more variance). The key point is that the posterior is **not** degenerate along the φ-p diagonal, confirming both parameters are separately identifiable from the data.
 
-Posterior predictive checks (PPC) are a critical validation step in Bayesian workflow. Because the `Tweedie` wrapper provides `tweedie_random` as the `random` argument to `CustomDist`, PyMC handles posterior predictive sampling automatically:
+Posterior predictive checks (PPC) are a critical validation step in Bayesian workflow. Because the `Tweedie` wrapper provides the symbolic `tweedie_dist` to `pmd.CustomDist`, PyMC handles posterior predictive sampling automatically via the compiled compound graph:
 
 ```python title="Posterior predictive check — using pm.sample_posterior_predictive"
 with model:
@@ -267,8 +273,6 @@ obs_stats = {
     "n_nonzero": np.sum(y_obs > 0),
 }
 ```
-
-The key point: `tweedie_random` defined in the `Tweedie` class is what `sample_posterior_predictive` uses under the hood to generate draws — no manual thinning or re-sampling needed.
 
 #### Moment Validation
 
@@ -345,20 +349,20 @@ Our Bayesian model correctly recovers the 93.2% observed zero rate. The Pearson 
 
 Adding covariates on the mean via a log-link GLM reveals something interesting:
 
-```python title="Tweedie GLM with covariates"
+```python title="Tweedie GLM with covariates (pymc.dims)"
 def build_glm_model(y, X, features, p_range=(1.1, 1.9)):
     coords = {"features": features, "obs": np.arange(len(y))}
     with pm.Model(coords=coords) as model:
-        beta = pm.Normal("beta", mu=0, sigma=1, dims="features")
-        mu = pm.Deterministic("mu", pt.exp(pt.dot(X, beta)))
+        beta = pmd.Normal("beta", mu=0, sigma=1, dims="features")
+        mu = pmd.Deterministic("mu", pt.exp(pt.dot(X, beta)))
 
-        log_phi = pm.Normal("log_phi", mu=5.0, sigma=2.0)
-        phi = pm.Deterministic("phi", pt.exp(log_phi))
+        log_phi = pmd.Normal("log_phi", mu=0, sigma=1)
+        phi = pmd.Deterministic("phi", px.math.exp(log_phi))
 
-        p_logit = pm.Normal("p_logit", mu=0, sigma=1.5)
-        p = pm.Deterministic("p",
+        p_logit = pmd.Normal("p_logit", mu=-0.5, sigma=0.5)
+        p = pmd.Deterministic("p",
             p_range[0] + (p_range[1] - p_range[0])
-            * pm.math.sigmoid(p_logit))
+            * pmd.math.sigmoid(p_logit))
 
         Tweedie("y_obs", mu=mu, phi=phi, p=p, observed=y, dims="obs")
     return model
@@ -437,13 +441,16 @@ gh repo fork williambdean/williambdean.github.io --clone
 ```
 
 ```bash
-# Generate all figures (uv installs dependencies automatically)
+# Generate all figures and analysis (uv installs dependencies automatically)
 uv run docs/blog/posts/scripts/pearson-phi-broken-tweedie/fig_profile_likelihood.py
+uv run docs/blog/posts/scripts/pearson-phi-broken-tweedie/fig_prior_posterior.py
 uv run docs/blog/posts/scripts/pearson-phi-broken-tweedie/fig_ppc_validation.py
 uv run docs/blog/posts/scripts/pearson-phi-broken-tweedie/fig_zero_rate_comparison.py
 uv run docs/blog/posts/scripts/pearson-phi-broken-tweedie/fig_ppc_distribution.py
 uv run docs/blog/posts/scripts/pearson-phi-broken-tweedie/fig_pricing_profiles.py
 uv run docs/blog/posts/scripts/pearson-phi-broken-tweedie/fig_posterior_pairs.py
+uv run docs/blog/posts/scripts/pearson-phi-broken-tweedie/time_sampling.py
+uv run docs/blog/posts/scripts/pearson-phi-broken-tweedie/compute_pearson_phi.py
 ```
 
 Each figure script is fully self-contained using `uv` inline dependency metadata — there is no environment setup or `requirements.txt` needed. The scripts generate synthetic Tweedie data internally, so no external data files are required.
