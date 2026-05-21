@@ -19,7 +19,15 @@ Insurance pure premium data has a distinctive shape: 90%+ of policies have zero 
 
 Here is the paradox. A [well-known blog post on Tweedie GLMs for insurance](https://akshat.blog/posts/fitting-tweedie-models-to-claims-data/) reported something strange: the posterior predictive check predicted **99.95% zeros** against an observed **~94%**. The model collapsed to almost-all-zero predictions. This is not because Tweedie is the wrong distribution — it is because the dispersion parameter φ was estimated using the wrong tool.
 
-The default dispersion estimator in both R's [`statmod::tweedie`](https://search.r-project.org/CRAN/refmans/statmod/html/tweedie.html) and Python's [`statsmodels` GLM](https://www.statsmodels.org/stable/glm.html) is the **Pearson chi-squared statistic** ([Wikipedia](https://en.wikipedia.org/wiki/Pearson%27s_chi-squared_test)) divided by residual degrees of freedom. For zero-inflated data, this estimator is catastrophically biased — inflating φ by 7× on the dataCar dataset. The consequence is a model that predicts nearly all zeros.
+Why is Pearson the default? Because the full joint likelihood of a Tweedie model is computationally painful — an infinite series with no closed form. Traditional GLM software sidesteps this with a decoupled, multi-step heuristic:
+
+1. **Fix the power parameter p** — via a profile likelihood grid search (R's [`tweedie.profile()`](https://www.rdocumentation.org/packages/tweedie/versions/2.3.5/topics/tweedie.profile)), or simply assigned by the user as a constant (Python's `statsmodels`, [scikit-learn's `TweedieRegressor`](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.TweedieRegressor.html)). Scikit-learn's own [tutorial](https://scikit-learn.org/stable/auto_examples/linear_model/plot_tweedie_regression_insurance_claims.html) acknowledges this gap: *"Ideally one would select this value via grid-search ... but unfortunately the current implementation does not allow for this (yet)."*
+2. **Estimate the mean coefficients β** — via Iteratively Reweighted Least Squares (IRLS). The dispersion parameter φ drops out of the scoring equations, so the algorithm finds β without knowing φ.
+3. **Calculate φ as a post-hoc statistic** — now that μ̂ is fixed, φ is estimated from the residuals. In Python's statsmodels, this is the Pearson χ² statistic. R's `tweedie.profile()` can use MLE for φ, but still computes it conditionally on whichever p was locked in from step 1. The three parameters are never optimized jointly.
+
+This pipeline is fast and works well for approximately Normal data. But the zero-inflated Tweedie is not approximately Normal. And because φ is calculated last — after p and β are locked in — there is no feedback loop to catch the inflation.
+
+In this pipeline, the default dispersion estimator in both R's [`statmod::tweedie`](https://search.r-project.org/CRAN/refmans/statmod/html/tweedie.html) and Python's [`statsmodels` GLM](https://www.statsmodels.org/stable/glm.html) is the **Pearson chi-squared statistic** ([Wikipedia](https://en.wikipedia.org/wiki/Pearson%27s_chi-squared_test)) divided by residual degrees of freedom. For zero-inflated data, this estimator is catastrophically biased — inflating φ by 7× on the dataCar dataset. The consequence is a model that predicts nearly all zeros.
 
 ## Why Pearson φ Fails
 
@@ -33,12 +41,17 @@ The likelihood surface tells the full story:
 
 ![Profile likelihood for φ, showing MLE vs Pearson estimates.](../images/fig_profile_likelihood.png)
 
-For the dataCar dataset, the Pearson estimate sits at a tiny fraction of the peak likelihood:
-
-The MLE parameters are $10^{1123}$ times more probable than the Pearson parameters. In what world is this a reasonable estimator?
-
 ??? info "Why the Likelihood Ratio Matters"
     The log-likelihood difference ΔLL is not just a statistical nicety. It directly translates to predictive performance. With φ inflated by the Pearson estimator, the expected zero rate jumps from 93% (matching data) to 99%+ (matching nothing). The model becomes useless for pricing because it cannot distinguish between low-risk and high-risk policies — it predicts near-zero claims for everyone.
+
+The pipeline is not just slow or inconvenient — it is structurally incapable of catching the dispersion inflation. The fix is to stop treating the parameters as a sequence of isolated sub-problems and instead estimate them jointly:
+
+| Parameter | Traditional GLM | Bayesian PyMC |
+|-----------|----------------|---------------|
+| **Power p** | Fixed by grid search or user-specified constant | Sampled as continuous random variable (sigmoid-Normal transform) |
+| **Dispersion φ** | Conditional estimate (Pearson or MLE, given fixed p) | Sampled concurrently with its own prior |
+| **Regression β** | Point estimate via IRLS (p and φ fixed) | Joint posterior via NUTS, absorbing p/φ uncertainty |
+| **Validation** | Deviance metrics, residual plots | Prior predictive checks, PPC, full distributional validation |
 
 ## The Fix: Series Log-PDF
 
@@ -96,15 +109,10 @@ The key implementation choices:
 
 This `tweedie_logp_series` function becomes the `logp` for the `Tweedie` wrapper below — it is what MCMC uses to evaluate the likelihood of observed data at each step.
 
-!!! tip "Series Convergence"
-    The series converges rapidly for the parameter range we encounter ($p \in (1.1, 1.9)$, typical claim sizes). Even 5 terms match 100 terms to machine precision across this range. The default of 20 terms gives a generous safety margin. For extreme cases near $p=1.01$ or $p=1.99$, convergence slows and more terms may be needed — in practice these edge cases are rare in insurance data.
+??? tip "Series Convergence"
+    The series converges rapidly for the parameter range we encounter ($p \in (1.1, 1.9)$, typical claim sizes). Even 5 terms match 200 terms to < $10^{-15}$ across all test points. The default of 20 terms gives a generous safety margin. For extreme cases near $p=1.01$ or $p=1.99$, convergence slows and more terms may be needed — in practice these edge cases are rare in insurance data.
 
-    ```python
-    n_terms=  5: logp=-12.59247867
-    n_terms= 10: logp=-12.59247867
-    n_terms= 20: logp=-12.59247867
-    n_terms=100: logp=-12.59247867
-    ```
+    <center>![Series convergence](../images/fig_series_convergence.png){width="480"}</center>
 
 !!! info "Validation Against Reference"
     Our log-pdf matches the [`tweedie` Python reference package](https://pypi.org/project/tweedie/) to machine precision (all tested values show difference of exactly 0.000000). The implementation is verified across the full support of the distribution.
@@ -173,7 +181,18 @@ def build_intercept_only_model(y, p_range=(1.1, 1.9)):
     return model
 ```
 
-The sigmoid transform on $p$ ensures it stays in $(1.1, 1.9)$ — the range where the Poisson-Gamma compound representation is valid and the series converges reliably. The log-link keeps $\mu$ positive, which is natural for claim amounts.
+The sigmoid transform on $p$ keeps it in $(1.1, 1.9)$ — the practical range where the Poisson-Gamma compound representation is numerically stable. The log-link keeps $\mu$ positive, which is natural for claim amounts.
+
+??? info "Why p ∈ (1, 2) Matters"
+    The Tweedie distribution for $p \in (1, 2)$ is a **compound Poisson-Gamma process** ([Jørgensen, 1997](https://doi.org/10.1201/9780203743441)): the number of claims $N$ follows a Poisson distribution, and each individual claim amount follows a Gamma distribution. The sum of $N$ Gamma variables gives the total claim amount — producing the characteristic insurance shape: a point mass at zero and a continuous, right-skewed positive tail.
+
+    **What happens near the boundaries:**
+
+    **$p \to 1$** — as $p$ approaches 1 from above, $\alpha = \frac{2-p}{p-1} \to \infty$. The Gamma shape parameter $N \cdot \alpha$ explodes numerically, the series expansion converges slowly, and the distribution approaches an overdispersed Poisson — losing the Gamma severity component that captures large claims. At $p = 1$, the distribution degenerates to a Poisson with no continuous tail.
+
+    **$p \to 2$** — as $p$ approaches 2 from below, $\alpha \to 0$. The Gamma shape $N \cdot \alpha \to 0$, and $\text{gammaln}(0) = -\infty$ produces domain errors. This is why the code uses `maximum(N * alpha_term, 1e-10)` — a numerical guard against degenerate Gamma draws. At $p = 2$, the distribution becomes a pure Gamma, losing the point mass at zero needed to represent policies with no claims.
+
+    **Why $(1.1, 1.9)$ and not $(1, 2)$?** The theoretical range is $(1, 2)$, but for MCMC sampling we use the slightly narrower $(1.1, 1.9)$ as a practical safety margin. Near the exact boundaries the series convergence slows from $\sim 5$ terms to $50+$, and the NUTS sampler struggles with the extreme parameter curvature ([Dunn & Smyth, 2005](https://doi.org/10.1007/s11222-005-4070-y)). Insurance data typically produces $p$ estimates between 1.3 and 1.7, so this restriction costs nothing in practice while ensuring reliable sampling.
 
 ### Prior Predictive Check
 
@@ -222,8 +241,8 @@ The model shows clean posteriors — tight distributions around the maximum like
 
 Every value in this table — μ, φ, p, and any quantity derived from them — has a full posterior distribution. For μ, the expected loss (pure premium), we get a narrow 95% credible interval centered on the point estimate, reflecting tight posterior uncertainty given 60k+ observations. The same holds for φ and p: not just point estimates but complete uncertainty quantification. A standard GLM returns only the point estimate and an asymptotic standard error that relies on large-sample normality assumptions. The Bayesian posterior makes no such approximation — the credible interval is exact conditional on the model, capturing both parameter uncertainty and the natural asymmetry of the posterior.
 
-!!! tip "Computational Cost"
-    Sampling 4 chains with 1000 draws each takes about 3 minutes for a 60k-observation model with nutpie — the series expansion is the bottleneck, but it parallelizes across chains and observations. For comparison, a standard GLM with Pearson φ takes under a second.
+??? tip "Computational Cost"
+    Sampling 4 chains with 1000 draws each takes about 3 minutes for a 60k-observation model with nutpie on an Apple M3 (8-core CPU, 16 GB RAM) — the series expansion is the bottleneck, but it parallelizes across chains and observations. For comparison, a standard GLM with Pearson φ takes under a second.
 
 The contrast between MLE $\phi$ and Pearson $\phi$ is the central finding. Pearson inflates $\phi$ by 7× on dataCar. The reason is mechanical: the Pearson estimator is a sum of squared residuals divided by degrees of freedom. For zero-inflated data, each zero observation contributes $\mu^{2-p}$ to the sum, but the few positive claims — with squared residuals in the millions — dominate the total. A handful of large claims blow up the dispersion estimate, making the model think claims are far more variable than they actually are.
 
@@ -315,7 +334,7 @@ The risk loading is a different story. With the correct MLE dispersion, there is
 
 This is the uniquely Bayesian insight: the PPC validates the entire predictive distribution, not just a point estimate. A standard GLM reports the same mean ($293) but cannot tell you whether the distribution around that mean is realistic. The PPC — available only through the Bayesian posterior predictive — catches the Pearson failure. The dispersion estimate that looked reasonable in a coefficient table turns out to produce a predictive distribution that does not resemble the data at all. Without the PPC, you would never know.
 
-A model that cannot distinguish a 2.3% tail risk from 0.001% is not usable for pricing, reinsurance, or reserve setting. The PPC catches this; the Pearson dispersion does not.
+A model that cannot distinguish a 2.3% tail risk from 0.001% is catastrophically broken for pricing, reinsurance, or reserve setting. A 2.3% tail probability means a claim exceeding \$5,000 roughly once every 43 policies — a real risk that demands capital. 0.001% means such a claim would be expected once every 100,000 policies — invisible to the model. The difference between collecting adequate premiums and pricing yourself into insolvency. The PPC catches this catastrophic failure; the Pearson dispersion hides it.
 
 #### Pricing Exercise: Risk Profiles
 
