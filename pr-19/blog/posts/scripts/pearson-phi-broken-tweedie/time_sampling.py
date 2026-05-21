@@ -54,7 +54,7 @@ def tweedie_dist(mu, phi, p):
     """Tweedie random draws via Poisson-Gamma compound (p ∈ (1, 2))."""
     lam = mu ** (2 - p) / (phi * (2 - p))
     alpha_term = (2 - p) / (p - 1)
-    beta = phi * (p - 1) * mu ** (p - 1)
+    beta = 1.0 / (phi * (p - 1) * mu ** (p - 1))
     N = pmd.Poisson.dist(mu=lam)
     Y = pmd.Gamma.dist(alpha=px.math.maximum(N * alpha_term, 1e-10), beta=beta)
     return px.math.where(N > 0, Y, 0.0)

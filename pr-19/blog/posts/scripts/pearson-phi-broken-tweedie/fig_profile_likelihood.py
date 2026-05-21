@@ -11,6 +11,8 @@ and Pearson dispersion estimates.
 
 from pathlib import Path
 
+import sys
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -69,6 +71,11 @@ for ax, ds in zip(axes, datasets):
     ll_pearson = tweedie_logp_series(y, mu_ds, phi_pearson, p_ds).sum()
 
     delta_ll = ll_mle - ll_pearson
+
+    exponent_10 = delta_ll / np.log(10)
+    print(f"[{name}] phi_pearson={phi_pearson:.0f}  phi_mle={phi_true:.0f}  "
+          f"delta_ll={delta_ll:.1f}  e^{delta_ll:.0f} = 10^{exponent_10:.0f}",
+          file=sys.stderr)
 
     ax.plot(phi_grid, ll, "b-", linewidth=2, label="Log-likelihood")
     ax.axvline(phi_true, color="green", linestyle="--", linewidth=2,

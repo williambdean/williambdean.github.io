@@ -701,11 +701,35 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#an-alternative-the-saddlepoint-approximation" class="md-nav__link">
+    <span class="md-ellipsis">
+      An Alternative? The Saddlepoint Approximation
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#why-this-matters" class="md-nav__link">
     <span class="md-ellipsis">
       Why This Matters
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Why This Matters">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#adverse-selection-the-balance-sheet-stakes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Adverse Selection: The Balance-Sheet Stakes
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1443,11 +1467,35 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#an-alternative-the-saddlepoint-approximation" class="md-nav__link">
+    <span class="md-ellipsis">
+      An Alternative? The Saddlepoint Approximation
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#why-this-matters" class="md-nav__link">
     <span class="md-ellipsis">
       Why This Matters
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Why This Matters">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#adverse-selection-the-balance-sheet-stakes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Adverse Selection: The Balance-Sheet Stakes
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1541,20 +1589,57 @@
 </div>
 <h2 id="the-problem">The Problem</h2>
 <p>Insurance pure premium data has a distinctive shape: 90%+ of policies have zero claims, while the remaining few have positive amounts that are right-skewed and occasionally extreme. The <a href="https://doi.org/10.1007/s11222-005-4070-y">Tweedie distribution</a> is the standard tool for this setting — it naturally handles the zero-mass point and continuous positive tail through a single compound Poisson-Gamma process.</p>
-<p>Here is the paradox. A <a href="https://akshat.blog/posts/fitting-tweedie-models-to-claims-data/">well-known blog post on Tweedie GLMs for insurance</a> reported something strange: the posterior predictive check predicted <strong>99.95% zeros</strong> against an observed <strong>~94%</strong>. The model collapsed to almost-all-zero predictions. This is not because Tweedie is the wrong distribution — it is because the dispersion parameter φ was estimated using the wrong tool.</p>
-<p>The default dispersion estimator in both R's <a href="https://search.r-project.org/CRAN/refmans/statmod/html/tweedie.html"><code>statmod::tweedie</code></a> and Python's <a href="https://www.statsmodels.org/stable/glm.html"><code>statsmodels</code> GLM</a> is the <strong>Pearson chi-squared statistic</strong> (<a href="https://en.wikipedia.org/wiki/Pearson%27s_chi-squared_test">Wikipedia</a>) divided by residual degrees of freedom. For zero-inflated data, this estimator is catastrophically biased — inflating φ by 7× on the dataCar dataset. The consequence is a model that predicts nearly all zeros.</p>
+<p>Here is the paradox. A <a href="https://akshat.blog/posts/fitting-tweedie-models-to-claims-data/">blog post on Tweedie GLMs for insurance</a> reported something strange: the posterior predictive check predicted <strong>99.95% zeros</strong> against an observed <strong>~94%</strong>. The model collapsed to almost-all-zero predictions. This is not because Tweedie is the wrong distribution — it is because the dispersion parameter φ was estimated using the wrong tool.</p>
+<p>Why is Pearson the default? Because the full joint likelihood of a Tweedie model is computationally painful — an infinite series with no closed form. Traditional GLM software sidesteps this with a decoupled, multi-step heuristic:</p>
+<ol>
+<li><strong>Fix the power parameter p</strong> — via a profile likelihood grid search (R's <a href="https://www.rdocumentation.org/packages/tweedie/versions/2.3.5/topics/tweedie.profile"><code>tweedie.profile()</code></a>), or simply assigned by the user as a constant (Python's <code>statsmodels</code>, <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.TweedieRegressor.html">scikit-learn's <code>TweedieRegressor</code></a>). Scikit-learn's own <a href="https://scikit-learn.org/stable/auto_examples/linear_model/plot_tweedie_regression_insurance_claims.html">tutorial</a> acknowledges this gap: <em>"Ideally one would select this value via grid-search ... but unfortunately the current implementation does not allow for this (yet)."</em></li>
+<li><strong>Estimate the mean coefficients β</strong> — via Iteratively Reweighted Least Squares (IRLS). The dispersion parameter φ drops out of the scoring equations, so the algorithm finds β without knowing φ.</li>
+<li><strong>Calculate φ as a post-hoc statistic</strong> — now that μ̂ is fixed, φ is estimated from the residuals. In Python's statsmodels, this is the Pearson χ² statistic. R's <code>tweedie.profile()</code> can use MLE for φ, but still computes it conditionally on whichever p was locked in from step 1. The three parameters are never optimized jointly.</li>
+</ol>
+<p>This pipeline is fast and works well for approximately Normal data. But the zero-inflated Tweedie is not approximately Normal. And because φ is calculated last — after p and β are locked in — there is no feedback loop to catch the inflation.</p>
+<p>In this pipeline, the default dispersion estimator in both R's <a href="https://search.r-project.org/CRAN/refmans/statmod/html/tweedie.html"><code>statmod::tweedie</code></a> and Python's <a href="https://www.statsmodels.org/stable/glm.html"><code>statsmodels</code> GLM</a> is the <strong>Pearson chi-squared statistic</strong> (<a href="https://en.wikipedia.org/wiki/Pearson%27s_chi-squared_test">Wikipedia</a>) divided by residual degrees of freedom. For zero-inflated data, this estimator is catastrophically biased — inflating φ by 7× on the dataCar dataset. The consequence is a model that predicts nearly all zeros.</p>
 <h2 id="why-pearson-fails">Why Pearson φ Fails</h2>
 <p>The Pearson dispersion estimate is:</p>
 <div class="arithmatex">\[ \hat{\phi}_{\text{Pearson}} = \frac{1}{n-p} \sum_{i=1}^n \frac{(y_i - \hat{\mu}_i)^2}{V(\hat{\mu}_i)} \]</div>
 <p>For the Tweedie distribution, <span class="arithmatex">\(V(\mu) = \mu^p\)</span>. When the data has 93% zeros, most observations have <span class="arithmatex">\(y_i = 0\)</span> and contribute <span class="arithmatex">\(\mu^{2-p}\)</span> to the sum. With <span class="arithmatex">\(\mu \approx 200\)</span> and <span class="arithmatex">\(p \approx 1.6\)</span>, this gives <span class="arithmatex">\(\mu^{2-p} \approx 7\)</span> per zero. But the few positive claims — with <span class="arithmatex">\(y_i\)</span> in the thousands — produce enormous squared residuals that dominate the estimate. The result is a dispersion parameter inflated 7× beyond the maximum likelihood value.</p>
 <p>The likelihood surface tells the full story:</p>
 <p><img alt="Profile likelihood for φ, showing MLE vs Pearson estimates." src="../../images/fig_profile_likelihood.png"></p>
-<p>For the dataCar dataset, the Pearson estimate sits at a tiny fraction of the peak likelihood:</p>
-<p>The MLE parameters are <span class="arithmatex">\(10^{1123}\)</span> times more probable than the Pearson parameters. In what world is this a reasonable estimator?</p>
 <details class="info">
 <summary>Why the Likelihood Ratio Matters</summary>
 <p>The log-likelihood difference ΔLL is not just a statistical nicety. It directly translates to predictive performance. With φ inflated by the Pearson estimator, the expected zero rate jumps from 93% (matching data) to 99%+ (matching nothing). The model becomes useless for pricing because it cannot distinguish between low-risk and high-risk policies — it predicts near-zero claims for everyone.</p>
 </details>
+<p>The pipeline is not just slow or inconvenient — it is structurally incapable of catching the dispersion inflation. The fix is to stop treating the parameters as a sequence of isolated sub-problems and instead estimate them jointly:</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Traditional GLM</th>
+<th>Bayesian PyMC</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Power p</strong></td>
+<td>Fixed by grid search or user-specified constant</td>
+<td>Sampled as continuous random variable (sigmoid-Normal transform)</td>
+</tr>
+<tr>
+<td><strong>Dispersion φ</strong></td>
+<td>Conditional estimate (Pearson or MLE, given fixed p)</td>
+<td>Sampled concurrently with its own prior</td>
+</tr>
+<tr>
+<td><strong>Regression β</strong></td>
+<td>Point estimate via IRLS (p and φ fixed)</td>
+<td>Joint posterior via NUTS, absorbing p/φ uncertainty</td>
+</tr>
+<tr>
+<td><strong>Validation</strong></td>
+<td>Deviance metrics, residual plots</td>
+<td>Prior predictive checks, PPC, full distributional validation</td>
+</tr>
+</tbody>
+</table>
 <h2 id="the-fix-series-log-pdf">The Fix: Series Log-PDF</h2>
 <p>The reason practitioners reach for Pearson φ is that the Tweedie density does not have a closed form. The likelihood is an infinite series (<a href="https://doi.org/10.1007/s11222-005-4070-y">Dunn &amp; Smyth, 2005</a>):</p>
 <div class="arithmatex">\[ f(y; \mu, \phi, p) = \frac{1}{y} \sum_{j=1}^{\infty} W_j \]</div>
@@ -1604,15 +1689,11 @@
 <li><strong>Dim-name broadcasting</strong> — <code>j</code> with dims <code>("term",)</code> and <code>value</code> with dims <code>("obs",)</code> broadcast naturally to <code>("term", "obs")</code>, replacing the manual <code>reshape((-1, 1))</code> needed in the tensor version</li>
 </ul>
 <p>This <code>tweedie_logp_series</code> function becomes the <code>logp</code> for the <code>Tweedie</code> wrapper below — it is what MCMC uses to evaluate the likelihood of observed data at each step.</p>
-<div class="admonition tip">
-<p class="admonition-title">Series Convergence</p>
-<p>The series converges rapidly for the parameter range we encounter (<span class="arithmatex">\(p \in (1.1, 1.9)\)</span>, typical claim sizes). Even 5 terms match 100 terms to machine precision across this range. The default of 20 terms gives a generous safety margin. For extreme cases near <span class="arithmatex">\(p=1.01\)</span> or <span class="arithmatex">\(p=1.99\)</span>, convergence slows and more terms may be needed — in practice these edge cases are rare in insurance data.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">n_terms</span><span class="o">=</span>  <span class="mi">5</span><span class="p">:</span> <span class="n">logp</span><span class="o">=-</span><span class="mf">12.59247867</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">n_terms</span><span class="o">=</span> <span class="mi">10</span><span class="p">:</span> <span class="n">logp</span><span class="o">=-</span><span class="mf">12.59247867</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">n_terms</span><span class="o">=</span> <span class="mi">20</span><span class="p">:</span> <span class="n">logp</span><span class="o">=-</span><span class="mf">12.59247867</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="n">n_terms</span><span class="o">=</span><span class="mi">100</span><span class="p">:</span> <span class="n">logp</span><span class="o">=-</span><span class="mf">12.59247867</span>
-</code></pre></div>
-</div>
+<details class="tip">
+<summary>Series Convergence</summary>
+<p>The series converges rapidly for the parameter range we encounter (<span class="arithmatex">\(p \in (1.1, 1.9)\)</span>, typical claim sizes). Even 5 terms match 200 terms to &lt; <span class="arithmatex">\(10^{-15}\)</span> across all test points. The default of 20 terms gives a generous safety margin. For extreme cases near <span class="arithmatex">\(p=1.01\)</span> or <span class="arithmatex">\(p=1.99\)</span>, convergence slows and more terms may be needed — in practice these edge cases are rare in insurance data.</p>
+<p></p><center><img alt="Series convergence" src="../../images/fig_series_convergence.png" width="480"></center>
+</details>
 <div class="admonition info">
 <p class="admonition-title">Validation Against Reference</p>
 <p>Our log-pdf matches the <a href="https://pypi.org/project/tweedie/"><code>tweedie</code> Python reference package</a> to machine precision (all tested values show difference of exactly 0.000000). The implementation is verified across the full support of the distribution.</p>
@@ -1625,58 +1706,70 @@
 </div>
 <h3 id="the-bayesian-model">The Bayesian Model</h3>
 <p>With the log-pdf and random sampler in hand, building the model is straightforward. We place weakly informative priors on the parameters and wrap both functions into a <code>CustomDist</code>: the log-pdf for MCMC inference and the random sampler for posterior predictive checks.</p>
-<div class="highlight"><span class="filename">Tweedie wrapper using pymc.dims with compound dist + series logp</span><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">pymc</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pm</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="kn">import</span><span class="w"> </span><span class="nn">pymc.dims</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pmd</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="kn">import</span><span class="w"> </span><span class="nn">pytensor.xtensor</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">px</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="k">def</span><span class="w"> </span><span class="nf">tweedie_dist</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">phi</span><span class="p">,</span> <span class="n">p</span><span class="p">):</span>
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">    </span><span class="sd">"""Tweedie random draws via Poisson-Gamma compound (p ∈ (1, 2)).</span>
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>
-<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="sd">    Symbolic dist function for pmd.CustomDist: receives XTensorVariable</span>
-<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="sd">    params and returns a compound expression used for automatic sampling.</span>
-<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="sd">    """</span>
-<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>    <span class="n">lam</span> <span class="o">=</span> <span class="n">mu</span> <span class="o">**</span> <span class="p">(</span><span class="mi">2</span> <span class="o">-</span> <span class="n">p</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">phi</span> <span class="o">*</span> <span class="p">(</span><span class="mi">2</span> <span class="o">-</span> <span class="n">p</span><span class="p">))</span>
-<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>    <span class="n">alpha_term</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span> <span class="o">-</span> <span class="n">p</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">p</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
-<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>    <span class="n">beta</span> <span class="o">=</span> <span class="n">phi</span> <span class="o">*</span> <span class="p">(</span><span class="n">p</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">mu</span> <span class="o">**</span> <span class="p">(</span><span class="n">p</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
-<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>    <span class="n">N</span> <span class="o">=</span> <span class="n">pmd</span><span class="o">.</span><span class="n">Poisson</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">mu</span><span class="o">=</span><span class="n">lam</span><span class="p">)</span>
-<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>    <span class="n">Y</span> <span class="o">=</span> <span class="n">pmd</span><span class="o">.</span><span class="n">Gamma</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="n">px</span><span class="o">.</span><span class="n">math</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">N</span> <span class="o">*</span> <span class="n">alpha_term</span><span class="p">,</span> <span class="mf">1e-10</span><span class="p">),</span> <span class="n">beta</span><span class="o">=</span><span class="n">beta</span><span class="p">)</span>
-<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>    <span class="k">return</span> <span class="n">px</span><span class="o">.</span><span class="n">math</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">N</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
-<a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a>
-<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a>
-<a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="err">!!!</span> <span class="n">tip</span> <span class="s2">"Gamma Sum Property"</span>
-<a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a>    <span class="n">This</span> <span class="n">exploits</span> <span class="n">a</span> <span class="n">key</span> <span class="nb">property</span> <span class="n">of</span> <span class="n">the</span> <span class="n">Gamma</span> <span class="n">distribution</span><span class="p">:</span> <span class="n">the</span> <span class="nb">sum</span> <span class="n">of</span> <span class="err">$</span><span class="n">N</span><span class="err">$</span> <span class="n">i</span><span class="o">.</span><span class="n">i</span><span class="o">.</span><span class="n">d</span><span class="o">.</span> <span class="err">$</span>\<span class="n">text</span><span class="p">{</span><span class="n">Gamma</span><span class="p">}(</span>\<span class="n">alpha</span><span class="p">,</span> \<span class="n">beta</span><span class="p">)</span><span class="err">$</span> <span class="n">variables</span> <span class="ow">is</span> <span class="err">$</span>\<span class="n">text</span><span class="p">{</span><span class="n">Gamma</span><span class="p">}(</span><span class="n">N</span> \<span class="n">cdot</span> \<span class="n">alpha</span><span class="p">,</span> \<span class="n">beta</span><span class="p">)</span><span class="err">$</span><span class="o">.</span> <span class="n">So</span> <span class="n">instead</span> <span class="n">of</span> <span class="n">summing</span> <span class="err">$</span><span class="n">N</span><span class="err">$</span> <span class="n">individual</span> <span class="n">Gamma</span> <span class="n">draws</span><span class="p">,</span> <span class="n">we</span> <span class="n">draw</span> <span class="n">a</span> <span class="n">single</span> <span class="n">Gamma</span> <span class="k">with</span> <span class="n">shape</span> <span class="err">$</span><span class="n">N</span> \<span class="n">cdot</span> \<span class="n">alpha_</span><span class="p">{</span>\<span class="n">text</span><span class="p">{</span><span class="n">term</span><span class="p">}}</span><span class="err">$</span><span class="o">.</span> <span class="n">When</span> <span class="err">$</span><span class="n">N</span> <span class="o">=</span> <span class="mi">0</span><span class="err">$</span><span class="p">,</span> <span class="n">the</span> <span class="err">`</span><span class="n">where</span><span class="err">`</span> <span class="n">returns</span> <span class="mi">0</span> <span class="err">—</span> <span class="n">the</span> <span class="n">point</span> <span class="n">mass</span> <span class="n">at</span> <span class="n">zero</span> <span class="n">that</span> <span class="n">characterizes</span> <span class="n">the</span> <span class="n">Tweedie</span><span class="o">.</span>
-<a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a>
-<a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tweedie</span><span class="p">:</span>
-<a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">phi</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a>        <span class="k">return</span> <span class="n">pmd</span><span class="o">.</span><span class="n">CustomDist</span><span class="p">(</span>
-<a id="__codelineno-2-26" name="__codelineno-2-26" href="#__codelineno-2-26"></a>            <span class="n">name</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">phi</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span>
-<a id="__codelineno-2-27" name="__codelineno-2-27" href="#__codelineno-2-27"></a>            <span class="n">dist</span><span class="o">=</span><span class="n">tweedie_dist</span><span class="p">,</span>
-<a id="__codelineno-2-28" name="__codelineno-2-28" href="#__codelineno-2-28"></a>            <span class="n">logp</span><span class="o">=</span><span class="n">tweedie_logp_series</span><span class="p">,</span>
-<a id="__codelineno-2-29" name="__codelineno-2-29" href="#__codelineno-2-29"></a>            <span class="n">class_name</span><span class="o">=</span><span class="s2">"Tweedie"</span><span class="p">,</span>
-<a id="__codelineno-2-30" name="__codelineno-2-30" href="#__codelineno-2-30"></a>            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
-<a id="__codelineno-2-31" name="__codelineno-2-31" href="#__codelineno-2-31"></a>        <span class="p">)</span>
-<a id="__codelineno-2-32" name="__codelineno-2-32" href="#__codelineno-2-32"></a>
-<a id="__codelineno-2-33" name="__codelineno-2-33" href="#__codelineno-2-33"></a>
-<a id="__codelineno-2-34" name="__codelineno-2-34" href="#__codelineno-2-34"></a><span class="k">def</span><span class="w"> </span><span class="nf">build_intercept_only_model</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">p_range</span><span class="o">=</span><span class="p">(</span><span class="mf">1.1</span><span class="p">,</span> <span class="mf">1.9</span><span class="p">)):</span>
-<a id="__codelineno-2-35" name="__codelineno-2-35" href="#__codelineno-2-35"></a>    <span class="n">coords</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"obs"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">))}</span>
-<a id="__codelineno-2-36" name="__codelineno-2-36" href="#__codelineno-2-36"></a>    <span class="k">with</span> <span class="n">pm</span><span class="o">.</span><span class="n">Model</span><span class="p">(</span><span class="n">coords</span><span class="o">=</span><span class="n">coords</span><span class="p">)</span> <span class="k">as</span> <span class="n">model</span><span class="p">:</span>
-<a id="__codelineno-2-37" name="__codelineno-2-37" href="#__codelineno-2-37"></a>        <span class="n">log_mu</span> <span class="o">=</span> <span class="n">pmd</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="s2">"log_mu"</span><span class="p">,</span>
-<a id="__codelineno-2-38" name="__codelineno-2-38" href="#__codelineno-2-38"></a>                            <span class="n">mu</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span> <span class="mi">1</span><span class="p">)),</span> <span class="n">sigma</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-<a id="__codelineno-2-39" name="__codelineno-2-39" href="#__codelineno-2-39"></a>        <span class="n">mu</span> <span class="o">=</span> <span class="n">pmd</span><span class="o">.</span><span class="n">Deterministic</span><span class="p">(</span><span class="s2">"mu"</span><span class="p">,</span> <span class="n">px</span><span class="o">.</span><span class="n">math</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">log_mu</span><span class="p">))</span>
-<a id="__codelineno-2-40" name="__codelineno-2-40" href="#__codelineno-2-40"></a>
-<a id="__codelineno-2-41" name="__codelineno-2-41" href="#__codelineno-2-41"></a>        <span class="n">log_phi</span> <span class="o">=</span> <span class="n">pmd</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="s2">"log_phi"</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-<a id="__codelineno-2-42" name="__codelineno-2-42" href="#__codelineno-2-42"></a>        <span class="n">phi</span> <span class="o">=</span> <span class="n">pmd</span><span class="o">.</span><span class="n">Deterministic</span><span class="p">(</span><span class="s2">"phi"</span><span class="p">,</span> <span class="n">px</span><span class="o">.</span><span class="n">math</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">log_phi</span><span class="p">))</span>
-<a id="__codelineno-2-43" name="__codelineno-2-43" href="#__codelineno-2-43"></a>
-<a id="__codelineno-2-44" name="__codelineno-2-44" href="#__codelineno-2-44"></a>        <span class="n">p_logit</span> <span class="o">=</span> <span class="n">pmd</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="s2">"p_logit"</span><span class="p">,</span> <span class="n">mu</span><span class="o">=-</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
-<a id="__codelineno-2-45" name="__codelineno-2-45" href="#__codelineno-2-45"></a>        <span class="n">p</span> <span class="o">=</span> <span class="n">pmd</span><span class="o">.</span><span class="n">Deterministic</span><span class="p">(</span><span class="s2">"p"</span><span class="p">,</span>
-<a id="__codelineno-2-46" name="__codelineno-2-46" href="#__codelineno-2-46"></a>            <span class="n">p_range</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="n">p_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">p_range</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-<a id="__codelineno-2-47" name="__codelineno-2-47" href="#__codelineno-2-47"></a>            <span class="o">*</span> <span class="n">pmd</span><span class="o">.</span><span class="n">math</span><span class="o">.</span><span class="n">sigmoid</span><span class="p">(</span><span class="n">p_logit</span><span class="p">))</span>
-<a id="__codelineno-2-48" name="__codelineno-2-48" href="#__codelineno-2-48"></a>
-<a id="__codelineno-2-49" name="__codelineno-2-49" href="#__codelineno-2-49"></a>        <span class="n">Tweedie</span><span class="p">(</span><span class="s2">"y_obs"</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="n">mu</span><span class="p">,</span> <span class="n">phi</span><span class="o">=</span><span class="n">phi</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="n">p</span><span class="p">,</span> <span class="n">observed</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">dims</span><span class="o">=</span><span class="s2">"obs"</span><span class="p">)</span>
-<a id="__codelineno-2-50" name="__codelineno-2-50" href="#__codelineno-2-50"></a>    <span class="k">return</span> <span class="n">model</span>
+<div class="highlight"><span class="filename">Tweedie wrapper using pymc.dims with compound dist + series logp</span><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">pymc</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pm</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kn">import</span><span class="w"> </span><span class="nn">pymc.dims</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pmd</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="kn">import</span><span class="w"> </span><span class="nn">pytensor.xtensor</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">px</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="k">def</span><span class="w"> </span><span class="nf">tweedie_dist</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">phi</span><span class="p">,</span> <span class="n">p</span><span class="p">):</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">    </span><span class="sd">"""Tweedie random draws via Poisson-Gamma compound (p ∈ (1, 2)).</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="sd">    Symbolic dist function for pmd.CustomDist: receives XTensorVariable</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="sd">    params and returns a compound expression used for automatic sampling.</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="sd">    """</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>    <span class="n">lam</span> <span class="o">=</span> <span class="n">mu</span> <span class="o">**</span> <span class="p">(</span><span class="mi">2</span> <span class="o">-</span> <span class="n">p</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">phi</span> <span class="o">*</span> <span class="p">(</span><span class="mi">2</span> <span class="o">-</span> <span class="n">p</span><span class="p">))</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>    <span class="n">alpha_term</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span> <span class="o">-</span> <span class="n">p</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">p</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>    <span class="n">beta</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="n">phi</span> <span class="o">*</span> <span class="p">(</span><span class="n">p</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">mu</span> <span class="o">**</span> <span class="p">(</span><span class="n">p</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>    <span class="n">N</span> <span class="o">=</span> <span class="n">pmd</span><span class="o">.</span><span class="n">Poisson</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">mu</span><span class="o">=</span><span class="n">lam</span><span class="p">)</span>
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>    <span class="n">Y</span> <span class="o">=</span> <span class="n">pmd</span><span class="o">.</span><span class="n">Gamma</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="n">px</span><span class="o">.</span><span class="n">math</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">N</span> <span class="o">*</span> <span class="n">alpha_term</span><span class="p">,</span> <span class="mf">1e-10</span><span class="p">),</span> <span class="n">beta</span><span class="o">=</span><span class="n">beta</span><span class="p">)</span>
+<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>    <span class="k">return</span> <span class="n">px</span><span class="o">.</span><span class="n">math</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">N</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
 </code></pre></div>
-<p>The sigmoid transform on <span class="arithmatex">\(p\)</span> ensures it stays in <span class="arithmatex">\((1.1, 1.9)\)</span> — the range where the Poisson-Gamma compound representation is valid and the series converges reliably. The log-link keeps <span class="arithmatex">\(\mu\)</span> positive, which is natural for claim amounts.</p>
+<div class="admonition tip">
+<p class="admonition-title">Gamma Sum Property</p>
+<p>This exploits the <a href="https://en.wikipedia.org/wiki/Gamma_distribution#Sum_of_gamma_distributions">additivity property of the Gamma distribution</a>: the sum of <span class="arithmatex">\(N\)</span> i.i.d. <span class="arithmatex">\(\text{Gamma}(\alpha, \beta)\)</span> variables is <span class="arithmatex">\(\text{Gamma}(N \cdot \alpha, \beta)\)</span> (where <span class="arithmatex">\(\beta\)</span> is the rate parameter, <span class="arithmatex">\(1/\text{scale}\)</span>, as used by PyMC). So instead of summing <span class="arithmatex">\(N\)</span> individual Gamma draws, we draw a single Gamma with shape <span class="arithmatex">\(N \cdot \alpha_{\text{term}}\)</span>. When <span class="arithmatex">\(N = 0\)</span>, the <code>where</code> returns 0 — the point mass at zero that characterizes the Tweedie.</p>
+</div>
+<div class="highlight"><span class="filename">Tweedie wrapper and intercept-only model</span><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tweedie</span><span class="p">:</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">phi</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>        <span class="k">return</span> <span class="n">pmd</span><span class="o">.</span><span class="n">CustomDist</span><span class="p">(</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>            <span class="n">name</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">phi</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>            <span class="n">dist</span><span class="o">=</span><span class="n">tweedie_dist</span><span class="p">,</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>            <span class="n">logp</span><span class="o">=</span><span class="n">tweedie_logp_series</span><span class="p">,</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>            <span class="n">class_name</span><span class="o">=</span><span class="s2">"Tweedie"</span><span class="p">,</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>        <span class="p">)</span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="k">def</span><span class="w"> </span><span class="nf">build_intercept_only_model</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">p_range</span><span class="o">=</span><span class="p">(</span><span class="mf">1.1</span><span class="p">,</span> <span class="mf">1.9</span><span class="p">)):</span>
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>    <span class="n">coords</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"obs"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">))}</span>
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>    <span class="k">with</span> <span class="n">pm</span><span class="o">.</span><span class="n">Model</span><span class="p">(</span><span class="n">coords</span><span class="o">=</span><span class="n">coords</span><span class="p">)</span> <span class="k">as</span> <span class="n">model</span><span class="p">:</span>
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>        <span class="n">log_mu</span> <span class="o">=</span> <span class="n">pmd</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="s2">"log_mu"</span><span class="p">,</span>
+<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>                            <span class="n">mu</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span> <span class="mi">1</span><span class="p">)),</span> <span class="n">sigma</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>        <span class="n">mu</span> <span class="o">=</span> <span class="n">pmd</span><span class="o">.</span><span class="n">Deterministic</span><span class="p">(</span><span class="s2">"mu"</span><span class="p">,</span> <span class="n">px</span><span class="o">.</span><span class="n">math</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">log_mu</span><span class="p">))</span>
+<a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a>
+<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a>        <span class="n">log_phi</span> <span class="o">=</span> <span class="n">pmd</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="s2">"log_phi"</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a>        <span class="n">phi</span> <span class="o">=</span> <span class="n">pmd</span><span class="o">.</span><span class="n">Deterministic</span><span class="p">(</span><span class="s2">"phi"</span><span class="p">,</span> <span class="n">px</span><span class="o">.</span><span class="n">math</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">log_phi</span><span class="p">))</span>
+<a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a>
+<a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a>        <span class="n">p_logit</span> <span class="o">=</span> <span class="n">pmd</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="s2">"p_logit"</span><span class="p">,</span> <span class="n">mu</span><span class="o">=-</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a>        <span class="n">p</span> <span class="o">=</span> <span class="n">pmd</span><span class="o">.</span><span class="n">Deterministic</span><span class="p">(</span><span class="s2">"p"</span><span class="p">,</span>
+<a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a>            <span class="n">p_range</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="n">p_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">p_range</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a>            <span class="o">*</span> <span class="n">pmd</span><span class="o">.</span><span class="n">math</span><span class="o">.</span><span class="n">sigmoid</span><span class="p">(</span><span class="n">p_logit</span><span class="p">))</span>
+<a id="__codelineno-2-26" name="__codelineno-2-26" href="#__codelineno-2-26"></a>
+<a id="__codelineno-2-27" name="__codelineno-2-27" href="#__codelineno-2-27"></a>        <span class="n">Tweedie</span><span class="p">(</span><span class="s2">"y_obs"</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="n">mu</span><span class="p">,</span> <span class="n">phi</span><span class="o">=</span><span class="n">phi</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="n">p</span><span class="p">,</span> <span class="n">observed</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">dims</span><span class="o">=</span><span class="s2">"obs"</span><span class="p">)</span>
+<a id="__codelineno-2-28" name="__codelineno-2-28" href="#__codelineno-2-28"></a>    <span class="k">return</span> <span class="n">model</span>
+</code></pre></div>
+<div class="admonition tip">
+<p class="admonition-title">Geometric Prior Stabilizer</p>
+<p>The <code>p_logit</code> → sigmoid → scale to <span class="arithmatex">\((p_{\text{min}}, p_{\text{max}})\)</span> pipeline is a reusable design pattern for bounded parameters in PPLs. Instead of placing a prior directly on <span class="arithmatex">\(p\)</span> (where the gradient vanishes near the boundaries and NUTS stalls), we place a Normal prior on an unbounded latent variable and transform it deterministically. This gives NUTS an infinite, smooth Gaussian landscape to explore while perfectly shielding the series from the catastrophic gradient cliffs near <span class="arithmatex">\(p = 1.0\)</span> and <span class="arithmatex">\(p = 2.0\)</span>. The same pattern works universally: transform a Normal to Beta, Dirichlet, or constrained positive reals to stabilize sampling for any bounded parameter.</p>
+</div>
+<p>The sigmoid transform on <span class="arithmatex">\(p\)</span> keeps it in <span class="arithmatex">\((1.1, 1.9)\)</span> — the practical range where the Poisson-Gamma compound representation is numerically stable. The log-link keeps <span class="arithmatex">\(\mu\)</span> positive, which is natural for claim amounts.</p>
+<details class="info">
+<summary>Why p ∈ (1, 2) Matters</summary>
+<p>The Tweedie distribution for <span class="arithmatex">\(p \in (1, 2)\)</span> is a <strong>compound Poisson-Gamma process</strong> (<a href="https://doi.org/10.1201/9780203743441">Jørgensen, 1997</a>): the number of claims <span class="arithmatex">\(N\)</span> follows a Poisson distribution, and each individual claim amount follows a Gamma distribution. The sum of <span class="arithmatex">\(N\)</span> Gamma variables gives the total claim amount — producing the characteristic insurance shape: a point mass at zero and a continuous, right-skewed positive tail.</p>
+<p><strong>What happens near the boundaries:</strong></p>
+<p><strong><span class="arithmatex">\(p \to 1\)</span></strong> — as <span class="arithmatex">\(p\)</span> approaches 1 from above, <span class="arithmatex">\(\alpha = \frac{2-p}{p-1} \to \infty\)</span>. The Gamma shape parameter <span class="arithmatex">\(N \cdot \alpha\)</span> explodes numerically, the series expansion converges slowly, and the distribution approaches an overdispersed Poisson — losing the Gamma severity component that captures large claims. At <span class="arithmatex">\(p = 1\)</span>, the distribution degenerates to a Poisson with no continuous tail.</p>
+<p><strong><span class="arithmatex">\(p \to 2\)</span></strong> — as <span class="arithmatex">\(p\)</span> approaches 2 from below, <span class="arithmatex">\(\alpha \to 0\)</span>. The Gamma shape <span class="arithmatex">\(N \cdot \alpha \to 0\)</span>, and <span class="arithmatex">\(\text{gammaln}(0) = -\infty\)</span> produces domain errors. This is why the code uses <code>maximum(N * alpha_term, 1e-10)</code> — a numerical guard against degenerate Gamma draws. At <span class="arithmatex">\(p = 2\)</span>, the distribution becomes a pure Gamma, losing the point mass at zero needed to represent policies with no claims.</p>
+<p><strong>Why <span class="arithmatex">\((1.1, 1.9)\)</span> and not <span class="arithmatex">\((1, 2)\)</span>?</strong> The theoretical range is <span class="arithmatex">\((1, 2)\)</span>, but for MCMC sampling we use the slightly narrower <span class="arithmatex">\((1.1, 1.9)\)</span> as a practical safety margin. Near the exact boundaries the series convergence slows from <span class="arithmatex">\(\sim 5\)</span> terms to <span class="arithmatex">\(50+\)</span>, and the NUTS sampler struggles with the extreme parameter curvature (<a href="https://doi.org/10.1007/s11222-005-4070-y">Dunn &amp; Smyth, 2005</a>). Insurance data typically produces <span class="arithmatex">\(p\)</span> estimates between 1.3 and 1.7, so this restriction costs nothing in practice while ensuring reliable sampling.</p>
+</details>
 <h3 id="prior-predictive-check">Prior Predictive Check</h3>
 <p>Before fitting to data, we can check that our priors imply reasonable data ranges. Sampling from the prior and computing the implied zero rate and mean claim should land in the ballpark of actual insurance portfolios:</p>
 <div class="highlight"><span class="filename">Prior predictive check</span><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">with</span> <span class="n">model</span><span class="p">:</span>
@@ -1751,10 +1844,36 @@
 </tbody>
 </table>
 <p>Every value in this table — μ, φ, p, and any quantity derived from them — has a full posterior distribution. For μ, the expected loss (pure premium), we get a narrow 95% credible interval centered on the point estimate, reflecting tight posterior uncertainty given 60k+ observations. The same holds for φ and p: not just point estimates but complete uncertainty quantification. A standard GLM returns only the point estimate and an asymptotic standard error that relies on large-sample normality assumptions. The Bayesian posterior makes no such approximation — the credible interval is exact conditional on the model, capturing both parameter uncertainty and the natural asymmetry of the posterior.</p>
-<div class="admonition tip">
-<p class="admonition-title">Computational Cost</p>
-<p>Sampling 4 chains with 1000 draws each takes about 3 minutes for a 60k-observation model with nutpie — the series expansion is the bottleneck, but it parallelizes across chains and observations. For comparison, a standard GLM with Pearson φ takes under a second.</p>
-</div>
+<p>But how do we know these estimates are <em>correct</em>, not just well-behaved? A parameter recovery exercise provides the answer: generate synthetic data with known ground-truth parameters, fit the model, and check whether the posterior recovers the generating values.</p>
+<table>
+<thead>
+<tr>
+<th>Source</th>
+<th>μ</th>
+<th>φ</th>
+<th>p</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>True (generating)</td>
+<td>293</td>
+<td>174</td>
+<td>1.574</td>
+</tr>
+<tr>
+<td>Series posterior</td>
+<td>274 ± 10</td>
+<td>174 ± 6</td>
+<td>1.58 ± 0.01</td>
+</tr>
+</tbody>
+</table>
+<p>The posterior mean for φ and p exactly recovers the generating values, and μ is within two posterior standard deviations. The Tweedie mean posterior is mildly asymmetric — a consequence of the long right tail in the data — so the simple ±1 SD check understates how well the posterior covers the truth. This is the expected pattern: with only 5,000 observations, the sample mean itself has a standard error of roughly <span class="arithmatex">\(\sqrt{\phi \mu^p / n} \approx 16\)</span>, so the posterior's 95% interval (~274 ± 20) comfortably contains 293. On the full dataCar dataset (67,856 policies) the recovery would be considerably tighter. The broader point stands: the inference procedure recovers the parameters that produced the data. A model that cannot recover known truth on data it generated can hardly be trusted on real data.</p>
+<details class="tip">
+<summary>Computational Cost</summary>
+<p>Sampling 4 chains with 1000 draws each takes about 3 minutes for a 60k-observation model with nutpie on an Apple M3 (8-core CPU, 16 GB RAM) — the series expansion is the bottleneck, but it parallelizes across chains and observations. For comparison, a standard GLM with Pearson φ takes under a second.</p>
+</details>
 <p>The contrast between MLE <span class="arithmatex">\(\phi\)</span> and Pearson <span class="arithmatex">\(\phi\)</span> is the central finding. Pearson inflates <span class="arithmatex">\(\phi\)</span> by 7× on dataCar. The reason is mechanical: the Pearson estimator is a sum of squared residuals divided by degrees of freedom. For zero-inflated data, each zero observation contributes <span class="arithmatex">\(\mu^{2-p}\)</span> to the sum, but the few positive claims — with squared residuals in the millions — dominate the total. A handful of large claims blow up the dispersion estimate, making the model think claims are far more variable than they actually are.</p>
 <p>Why does inflated <span class="arithmatex">\(\phi\)</span> break the model? The expected zero probability is:</p>
 <div class="arithmatex">\[P(Y=0) = \exp\left(-\frac{\mu^{2-p}}{\phi (2-p)}\right)\]</div>
@@ -1837,7 +1956,7 @@
 <p>The pure premium (expected claim) is identical — the mean structure is the same. This is not a coincidence: the PPC already showed why. The total claim statistic (figure 5) confirmed our model recovers the correct aggregate, and a standard GLM fitted by IRLS converges to the same <span class="arithmatex">\(\mu\)</span> regardless of the dispersion estimate. The mean is robust to the choice of <span class="arithmatex">\(\phi\)</span> estimator.</p>
 <p>The risk loading is a different story. With the correct MLE dispersion, there is a 2.3% chance of a claim exceeding $5,000, which matters for pricing and capital reserves. With the Pearson estimator, the model says that chance is effectively zero — because φ is inflated to the point where the model predicts almost nothing but zeros.</p>
 <p>This is the uniquely Bayesian insight: the PPC validates the entire predictive distribution, not just a point estimate. A standard GLM reports the same mean ($293) but cannot tell you whether the distribution around that mean is realistic. The PPC — available only through the Bayesian posterior predictive — catches the Pearson failure. The dispersion estimate that looked reasonable in a coefficient table turns out to produce a predictive distribution that does not resemble the data at all. Without the PPC, you would never know.</p>
-<p>A model that cannot distinguish a 2.3% tail risk from 0.001% is not usable for pricing, reinsurance, or reserve setting. The PPC catches this; the Pearson dispersion does not.</p>
+<p>A model that cannot distinguish a 2.3% tail risk from 0.001% is catastrophically broken for pricing, reinsurance, or reserve setting. A 2.3% tail probability means a claim exceeding $5,000 roughly once every 43 policies — a real risk that demands capital. 0.001% means such a claim would be expected once every 100,000 policies — invisible to the model. The difference between collecting adequate premiums and pricing yourself into insolvency. The PPC catches this catastrophic failure; the Pearson dispersion hides it.</p>
 <h4 id="pricing-exercise-risk-profiles">Pricing Exercise: Risk Profiles</h4>
 <p>The Bayesian approach also provides something a point-estimate model cannot: the full predictive distribution for each risk profile individually. Age is a well-established rating factor in auto insurance, and the model's GLM coefficients confirm the expected pattern — younger drivers have higher expected pure premiums. The table below makes this explicit: expected pure premium drops from $360 (younger) to $220 (older), and the probability of a large claim (&gt; $5K) drops from 2.0% to 0.9% — a textbook age-risk gradient that a Pearson-based model would entirely miss.</p>
 <p>The figure below shows the predictive distribution for three age groups, holding other factors constant, with the corresponding statistics in the table beneath:</p>
@@ -1959,15 +2078,84 @@
 <p>The two models have essentially identical WAIC (Δ &lt; 1), and the effective number of parameters (pWAIC) jumps from 3.1 to 25.3 — the extra 22 features add complexity with no improvement. The simpler model is preferred.</p>
 <p>Why doesn't φ change? The Tweedie's variance function is <span class="arithmatex">\(V(\mu) = \mu^p\)</span>, and the dispersion φ scales the entire variance. If the intercept-only model already identifies the correct global φ from the marginal distribution, adding mean covariates cannot reduce it — the covariates reallocate <span class="arithmatex">\(\mu\)</span> across policies, but the overall claim-generating process has the same variance structure. The dispersion is well-identified from the marginal distribution alone.</p>
 <p>This does not mean covariates are useless for pricing. For individual risk profiles (as in the pricing exercise above), the GLM correctly adjusts premiums by age, vehicle type, and other factors. It means that <strong>the Tweedie's global dispersion is correctly specified as a single parameter</strong> — and that the Pearson estimator was never the right tool to estimate it.</p>
+<h2 id="an-alternative-the-saddlepoint-approximation">An Alternative? The Saddlepoint Approximation</h2>
+<p>The series expansion works, but at ~3 minutes per 60k observations it is the computational bottleneck. A natural question: is there a faster closed-form alternative?</p>
+<p>The Nelder &amp; Pregibon saddlepoint approximation replaces the infinite sum with a simple expression using the unit deviance:</p>
+<div class="arithmatex">\[ d(y, \mu, p) = 2\left[ \frac{y^{2-p}}{(1-p)(2-p)} - \frac{y\mu^{1-p}}{1-p} + \frac{\mu^{2-p}}{2-p} \right] \]</div>
+<div class="arithmatex">\[ \log L \approx -\tfrac{1}{2}\log(2\pi\phi y^p) - \frac{d(y, \mu, p)}{2\phi} \]</div>
+<p>No loops, no series, no scans. Just arithmetic — and natively differentiable by PyTensor.</p>
+<div class="highlight"><span class="filename">Tweedie log-pdf via saddlepoint approximation</span><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">tweedie_logp_saddlepoint</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">phi</span><span class="p">,</span> <span class="n">p</span><span class="p">):</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">    </span><span class="sd">"""Tweedie log-pdf via saddlepoint (Nelder &amp; Pregibon)."""</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>    <span class="n">value</span> <span class="o">=</span> <span class="n">as_xtensor</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">dims</span><span class="o">=</span><span class="p">(</span><span class="s2">"obs"</span><span class="p">,))</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>    <span class="n">mu</span><span class="p">,</span> <span class="n">phi</span><span class="p">,</span> <span class="n">p</span> <span class="o">=</span> <span class="n">pt</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">mu</span><span class="p">),</span> <span class="n">pt</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">phi</span><span class="p">),</span> <span class="n">pt</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>    <span class="n">y_safe</span> <span class="o">=</span> <span class="n">px</span><span class="o">.</span><span class="n">math</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="mf">1e-10</span><span class="p">)</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>    <span class="n">term1</span> <span class="o">=</span> <span class="n">y_safe</span> <span class="o">**</span> <span class="p">(</span><span class="mi">2</span> <span class="o">-</span> <span class="n">p</span><span class="p">)</span> <span class="o">/</span> <span class="p">((</span><span class="mi">1</span> <span class="o">-</span> <span class="n">p</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">2</span> <span class="o">-</span> <span class="n">p</span><span class="p">))</span>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>    <span class="n">term2</span> <span class="o">=</span> <span class="n">y_safe</span> <span class="o">*</span> <span class="p">(</span><span class="n">mu</span> <span class="o">**</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">p</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">p</span><span class="p">)</span>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>    <span class="n">term3</span> <span class="o">=</span> <span class="n">mu</span> <span class="o">**</span> <span class="p">(</span><span class="mi">2</span> <span class="o">-</span> <span class="n">p</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">-</span> <span class="n">p</span><span class="p">)</span>
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>    <span class="n">deviance</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">term1</span> <span class="o">-</span> <span class="n">term2</span> <span class="o">+</span> <span class="n">term3</span><span class="p">)</span>
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>
+<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a>    <span class="n">logl_pos</span> <span class="o">=</span> <span class="p">(</span>
+<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a>        <span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">px</span><span class="o">.</span><span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">pt</span><span class="o">.</span><span class="n">constant</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">*</span> <span class="n">phi</span> <span class="o">*</span> <span class="p">(</span><span class="n">y_safe</span> <span class="o">**</span> <span class="n">p</span><span class="p">))</span>
+<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a>        <span class="o">-</span> <span class="n">deviance</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">phi</span><span class="p">)</span>
+<a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a>    <span class="p">)</span>
+<a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a>    <span class="n">logl_zero</span> <span class="o">=</span> <span class="o">-</span><span class="p">(</span><span class="n">mu</span> <span class="o">**</span> <span class="p">(</span><span class="mi">2</span> <span class="o">-</span> <span class="n">p</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span><span class="n">phi</span> <span class="o">*</span> <span class="p">(</span><span class="mi">2</span> <span class="o">-</span> <span class="n">p</span><span class="p">))</span>
+<a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a>
+<a id="__codelineno-6-18" name="__codelineno-6-18" href="#__codelineno-6-18"></a>    <span class="k">return</span> <span class="n">pmd</span><span class="o">.</span><span class="n">tensor_from_xtensor</span><span class="p">(</span>
+<a id="__codelineno-6-19" name="__codelineno-6-19" href="#__codelineno-6-19"></a>        <span class="n">px</span><span class="o">.</span><span class="n">math</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">value</span> <span class="o">&lt;=</span> <span class="mf">1e-9</span><span class="p">,</span> <span class="n">logl_zero</span><span class="p">,</span> <span class="n">logl_pos</span><span class="p">)</span>
+<a id="__codelineno-6-20" name="__codelineno-6-20" href="#__codelineno-6-20"></a>    <span class="p">)</span>
+</code></pre></div>
+<p>This is a drop-in for <code>tweedie_logp_series</code> in the <code>Tweedie</code> wrapper — same signature, same zero-handling, just a different path through the log-probability.</p>
+<p>In traditional GLM software, this approximation works because the optimizer only differentiates with respect to μ (to find β). φ and p stay fixed — the deviance alone is sufficient for mean estimation.</p>
+<p>But in a Bayesian model, NUTS differentiates with respect to <strong>all</strong> parameters simultaneously. And that reveals the problem:</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Truth</th>
+<th>Series (exact)</th>
+<th>Saddlepoint (approx)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>μ</td>
+<td>$293</td>
+<td>274 ± 10</td>
+<td>274 ± 16</td>
+</tr>
+<tr>
+<td>φ</td>
+<td>174</td>
+<td>174 ± 6</td>
+<td><strong>4,963 ± 234</strong></td>
+</tr>
+<tr>
+<td>p</td>
+<td>1.574</td>
+<td>1.58 ± 0.01</td>
+<td><strong>1.12 ± 0.00</strong></td>
+</tr>
+</tbody>
+</table>
+<p><img alt="Series vs Saddlepoint posterior distributions." src="../../images/fig_saddlepoint_posterior.png"></p>
+<p>μ is close — the mean structure is robust. But φ inflates 28× and p crashes to the lower bound. The saddlepoint does not recover φ or p.</p>
+<p>The reason is structural, not numerical. The saddlepoint approximates <code>f(y)</code> at fixed parameters — it captures the density as a function of <em>observations</em>, up to a normalizing constant. But MCMC needs the gradient of <code>log f(params)</code> at a fixed <em>observed value</em>. These are different mathematical surfaces. The <code>−½log(φ)</code> term has no counterpart in the true Tweedie likelihood; it introduces a spurious gradient that the sampler follows into a completely wrong region — compensating for the distorted φ geometry by collapsing p to the floor.</p>
+<p>The saddlepoint is a serviceable μ-estimator — the same deviance used by standard GLMs. But for joint Bayesian inference, the series expansion is non-negotiable.</p>
 <h2 id="why-this-matters">Why This Matters</h2>
 <p>The takeaway is not that Tweedie is a bad model — it is that the <strong>default estimator is the wrong one</strong>. The Pearson dispersion is a moment-based estimator that works well for approximately Normal data but fails catastrophically for zero-inflated Tweedie models.</p>
 <p>For comparison, the <a href="https://scikit-learn.org/stable/auto_examples/linear_model/plot_tweedie_regression_insurance_claims.html">scikit-learn Tweedie regression tutorial</a> — the most widely-cited Python reference for Tweedie GLMs — validates models using deviance alone and fixes Tweedie power to an arbitrary value (p=1.9). Our results show that fixing p without fitting φ jointly misses the core misspecification that drives PPC failure.</p>
+<p>Even the saddlepoint approximation — the natural closed-form alternative that replaces the infinite series with simple arithmetic — fails for the same structural reason. Its <code>−½log(φ)</code> term introduces a gradient with no counterpart in the true likelihood, inflating φ 28× when differentiated jointly. The approximation survives in fixed-parameter GLMs (where only μ is differentiated); under full Bayesian gradients, it collapses.</p>
 <p>Three practical recommendations:</p>
 <ol>
 <li><strong>Estimate <span class="arithmatex">\(p\)</span> and <span class="arithmatex">\(\phi\)</span> jointly</strong> — fixing <span class="arithmatex">\(p\)</span> to an arbitrary value (like 1.6) and then estimating <span class="arithmatex">\(\phi\)</span> via Pearson creates a cascade of errors</li>
 <li><strong>Use the full likelihood</strong> — the series expansion is numerically tractable and converges rapidly; there is no reason to settle for method-of-moments estimates</li>
 <li><strong>Validate with PPC</strong> — if your model predicts 99%+ zeros when the data has 94%, the estimation method is likely the culprit, not the distribution</li>
 </ol>
+<h3 id="adverse-selection-the-balance-sheet-stakes">Adverse Selection: The Balance-Sheet Stakes</h3>
+<p>Because the frequentist Pearson φ overinflates dispersion, traditional GLMs yield standard errors that are too wide — they overestimate the uncertainty around predicted claim amounts. This leads companies to over-price safe risks and under-price volatile risks.</p>
+<p>The consequence is textbook adverse selection. A competitor using the stable Bayesian series model will immediately spot these mispriced segments. They will under-cut your price on the clean, profitable risks (the low-claim drivers you have over-priced), steadily stealing your best customers. Meanwhile, you are left with the under-priced, catastrophic risks — the drivers whose claim costs were systematically underestimated. Your loss ratio deteriorates from both directions simultaneously.</p>
+<p>The Bayesian model provides the mathematical vaccine: by recovering the correct φ and p jointly with full posterior uncertainty, it prices each risk at its actual expected cost rather than the smeared, inflated dispersion of the Pearson pipeline. The PPC validates that the predictive distribution matches reality — so when the model says a segment has a 2.3% chance of a $5,000+ claim, that number is trustworthy enough to set rates on.</p>
 <h2 id="related-work">Related Work</h2>
 <p>The problem of Pearson φ failing for Tweedie models is acknowledged across the actuarial literature, but almost always in passing:</p>
 <ul>
@@ -1989,6 +2177,9 @@
 <li>
 <p><strong>Wüthrich (2021)</strong> compares Poisson-gamma vs Tweedie parametrizations rigorously (<a href="https://link.springer.com/article/10.1007/s13385-021-00264-3">Springer</a>) and finds industry preference for the separate frequency-severity approach, noting dispersion modeling is the weak point of the single Tweedie GLM.</p>
 </li>
+<li>
+<p><strong>The saddlepoint approximation</strong> is frequently cited as a closed-form alternative to the exact series for Tweedie density evaluation (<a href="https://doi.org/10.1007/s11222-005-4070-y">Dunn &amp; Smyth, 2005</a>). However, as demonstrated above, its <span class="arithmatex">\(-\frac{1}{2}\log(\phi)\)</span> term introduces a spurious gradient with no counterpart in the true likelihood: under full Bayesian gradients where <span class="arithmatex">\(\phi\)</span> and <span class="arithmatex">\(p\)</span> are differentiated jointly, this inflates <span class="arithmatex">\(\phi\)</span> by 28× and crashes <span class="arithmatex">\(p\)</span> to the lower bound. The saddlepoint works for <span class="arithmatex">\(\mu\)</span>-estimation alone (the standard GLM use case with fixed <span class="arithmatex">\(p\)</span> and <span class="arithmatex">\(\phi\)</span>), but for joint Bayesian inference the series expansion is non-negotiable.</p>
+</li>
 </ul>
 <p>This post fills the gap: we identify the mechanism (Pearson φ inflation), demonstrate it empirically on the dataCar dataset, show the correct Bayesian fix, and connect it to the pricing decisions that matter.</p>
 <h2 id="possible-extensions">Possible Extensions</h2>
@@ -1997,28 +2188,30 @@
 <li><strong>BART for the mean structure</strong> — nonparametric mean estimation via <a href="https://www.pymc.io/projects/bart"><code>pymc-bart</code></a> for automatic interaction and nonlinearity detection</li>
 <li><strong>Hurdle models</strong> — separate models for claim frequency and severity for heavy-tailed data</li>
 <li><strong>Double GLM (μ-φ DGLM)</strong> — regressing dispersion <span class="arithmatex">\(\phi\)</span> on covariates could capture heteroskedasticity by risk class</li>
-<li><strong>Hierarchical (partial pooling) models</strong> — policies are nested in territories, vehicle types, and driver classes. PyMC's dims-based coordinate system makes random intercepts trivial to formulate: <code>pm.Normal("alpha_territory", mu=0, sigma=sigma_territory, dims="territory")</code> adds a partial-pooling term for every territory in a single line, with the group-level variance learned from data. The same pattern extends to random slopes and nested hierarchies. Sampling many group-level parameters is computationally demanding (more dimensions for the sampler), but the model specification is concise and natural.</li>
-<li><strong>Bayesian optimization for pricing</strong> — the posterior over (μ, φ, p) can drive pricing decisions under uncertainty. <a href="https://www.pymc.io/projects/docs/en/stable/api/generated/pymc.vectorize_over_posterior.html"><code>pymc.vectorize_over_posterior</code></a> takes the fitted model graph and posterior draws and returns a vectorized function over all draws — no manual looping or re-implementation. Use it to build an optimizer that evaluates pricing objectives (premium, deductible, risk retention) across the full posterior, giving a <em>distribution</em> over the optimal decision rather than a point estimate. This is the same technique behind PyMC-Marketing's MMM budget optimizer. The workflow of reusing the fitted model graph for downstream optimization was <a href="https://www.youtube.com/watch?v=85jPmkMTfck">pioneered by Ricardo Vieira in the PyMC ecosystem</a>.</li>
+<li><strong>Hierarchical (partial pooling) models</strong> — policies are nested in territories, vehicle types, and driver classes. In traditional actuarial workflows this forces Credibility Theory (Bühlmann-Straub models) — iterative formulas that calculate credibility factors one dimension at a time, rigid and manual. PyMC's dims-based partial-pooling formulation (<code>pm.Normal("alpha_territory", mu=0, sigma=sigma_territory, dims="territory")</code>) functions as <strong>Automated, Multi-Dimensional Credibility</strong>: it simultaneously calculates exact, mathematically sound credibility adjustments across nested, intersecting hierarchies, with all group-level variances learned from data. The same pattern extends to random slopes and nested hierarchies. Sampling many group-level parameters is computationally demanding (more dimensions for the sampler), but the model specification is concise and natural.</li>
+<li><strong>Bayesian optimization for pricing</strong> — the posterior over (μ, φ, p) can drive pricing decisions under uncertainty. The standard actuarial approach to risk-adjusted pricing under parameter uncertainty is nested Monte Carlo: an outer loop samples parameters, and for each set an inner loop simulates loss realizations — two layers of manual loops with no shared computation, custom and error-prone. <a href="https://www.pymc.io/projects/docs/en/stable/api/generated/pymc.vectorize_over_posterior.html"><code>pymc.vectorize_over_posterior</code></a> renders this obsolete: it takes the fitted model graph and posterior draws and returns a single vectorized function over all draws — PyTensor compiles the entire computation graph natively, with no manual looping or re-implementation. Use it to build an optimizer that evaluates pricing objectives (premium, deductible, risk retention) across the full posterior, giving a <em>distribution</em> over the optimal decision rather than a point estimate. This is the same technique behind PyMC-Marketing's MMM budget optimizer. The workflow of reusing the fitted model graph for downstream optimization was <a href="https://www.youtube.com/watch?v=85jPmkMTfck">pioneered by Ricardo Vieira in the PyMC ecosystem</a>.</li>
 </ul>
 <h2 id="reproducibility">Reproducibility</h2>
 <p>Clone or fork the repo and run the figure scripts locally:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1"># Clone with gh CLI</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>gh<span class="w"> </span>repo<span class="w"> </span>clone<span class="w"> </span>williambdean/williambdean.github.io
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="nb">cd</span><span class="w"> </span>williambdean.github.io
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>
-<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="c1"># Or fork first, then clone your fork</span>
-<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>gh<span class="w"> </span>repo<span class="w"> </span>fork<span class="w"> </span>williambdean/williambdean.github.io<span class="w"> </span>--clone
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="c1"># Clone with gh CLI</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>gh<span class="w"> </span>repo<span class="w"> </span>clone<span class="w"> </span>williambdean/williambdean.github.io
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="nb">cd</span><span class="w"> </span>williambdean.github.io
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="c1"># Or fork first, then clone your fork</span>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>gh<span class="w"> </span>repo<span class="w"> </span>fork<span class="w"> </span>williambdean/williambdean.github.io<span class="w"> </span>--clone
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="c1"># Generate all figures and analysis (uv installs dependencies automatically)</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>uv<span class="w"> </span>run<span class="w"> </span>docs/blog/posts/scripts/pearson-phi-broken-tweedie/fig_profile_likelihood.py
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>uv<span class="w"> </span>run<span class="w"> </span>docs/blog/posts/scripts/pearson-phi-broken-tweedie/fig_prior_posterior.py
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>uv<span class="w"> </span>run<span class="w"> </span>docs/blog/posts/scripts/pearson-phi-broken-tweedie/fig_ppc_validation.py
-<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>uv<span class="w"> </span>run<span class="w"> </span>docs/blog/posts/scripts/pearson-phi-broken-tweedie/fig_zero_rate_comparison.py
-<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>uv<span class="w"> </span>run<span class="w"> </span>docs/blog/posts/scripts/pearson-phi-broken-tweedie/fig_ppc_distribution.py
-<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>uv<span class="w"> </span>run<span class="w"> </span>docs/blog/posts/scripts/pearson-phi-broken-tweedie/fig_pricing_profiles.py
-<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>uv<span class="w"> </span>run<span class="w"> </span>docs/blog/posts/scripts/pearson-phi-broken-tweedie/fig_posterior_pairs.py
-<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>uv<span class="w"> </span>run<span class="w"> </span>docs/blog/posts/scripts/pearson-phi-broken-tweedie/time_sampling.py
-<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>uv<span class="w"> </span>run<span class="w"> </span>docs/blog/posts/scripts/pearson-phi-broken-tweedie/compute_pearson_phi.py
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="c1"># Generate all figures and analysis (uv installs dependencies automatically)</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>uv<span class="w"> </span>run<span class="w"> </span>docs/blog/posts/scripts/pearson-phi-broken-tweedie/fig_profile_likelihood.py
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>uv<span class="w"> </span>run<span class="w"> </span>docs/blog/posts/scripts/pearson-phi-broken-tweedie/fig_prior_posterior.py
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>uv<span class="w"> </span>run<span class="w"> </span>docs/blog/posts/scripts/pearson-phi-broken-tweedie/fig_ppc_validation.py
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>uv<span class="w"> </span>run<span class="w"> </span>docs/blog/posts/scripts/pearson-phi-broken-tweedie/fig_zero_rate_comparison.py
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>uv<span class="w"> </span>run<span class="w"> </span>docs/blog/posts/scripts/pearson-phi-broken-tweedie/fig_ppc_distribution.py
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>uv<span class="w"> </span>run<span class="w"> </span>docs/blog/posts/scripts/pearson-phi-broken-tweedie/fig_pricing_profiles.py
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>uv<span class="w"> </span>run<span class="w"> </span>docs/blog/posts/scripts/pearson-phi-broken-tweedie/fig_posterior_pairs.py
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>uv<span class="w"> </span>run<span class="w"> </span>docs/blog/posts/scripts/pearson-phi-broken-tweedie/time_sampling.py
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>uv<span class="w"> </span>run<span class="w"> </span>docs/blog/posts/scripts/pearson-phi-broken-tweedie/compute_pearson_phi.py
+<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a>uv<span class="w"> </span>run<span class="w"> </span>docs/blog/posts/scripts/pearson-phi-broken-tweedie/explore_saddlepoint.py
+<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a>uv<span class="w"> </span>run<span class="w"> </span>docs/blog/posts/scripts/pearson-phi-broken-tweedie/saddlepoint_model_fit.py
 </code></pre></div>
 <p>Each figure script is fully self-contained using <code>uv</code> inline dependency metadata — there is no environment setup or <code>requirements.txt</code> needed. The scripts generate synthetic Tweedie data internally, so no external data files are required.</p>
 <h2 id="further-reading">Further Reading</h2>
@@ -2056,7 +2249,7 @@
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="May 20, 2026 19:39:47">May 20, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="May 21, 2026 11:27:52">May 21, 2026</span>
   </span>
 
     

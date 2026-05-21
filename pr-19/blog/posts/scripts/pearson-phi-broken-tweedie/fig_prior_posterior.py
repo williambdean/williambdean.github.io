@@ -62,7 +62,7 @@ def tweedie_dist(mu, phi, p):
     """Tweedie random draws via Poisson-Gamma compound (p ∈ (1, 2))."""
     lam = mu ** (2 - p) / (phi * (2 - p))
     alpha_term = (2 - p) / (p - 1)
-    beta = phi * (p - 1) * mu ** (p - 1)
+    beta = 1.0 / (phi * (p - 1) * mu ** (p - 1))
     N = pmd.Poisson.dist(mu=lam)
     Y = pmd.Gamma.dist(alpha=px.math.maximum(N * alpha_term, 1e-10), beta=beta)
     return px.math.where(N > 0, Y, 0.0)
@@ -132,15 +132,28 @@ combined = az.from_dict(data={
     },
 })
 
-# --- Plot prior-vs-posterior using arviz ---
-pc = az.plot_prior_posterior(
-    combined,
-    var_names=["mu", "phi", "p"],
-    kind="hist",
-)
+# --- Plot prior-vs-posterior: (3, 1) vertical layout ---
+fig, axes = plt.subplots(3, 1, figsize=(6, 12), sharex=False)
+var_names = ["mu", "phi", "p"]
+var_labels = {"mu": "μ (pure premium)", "phi": "φ (dispersion)", "p": "p (power)"}
 
-# Add a figure-level title
-pc.add_title("Prior vs Posterior: 5000 Observations Tighten All Parameters", fontsize=13)
+for ax, var in zip(axes, var_names):
+    prior_vals = combined["prior"][var].values
+    post_vals = combined["posterior"][var].values
 
-pc.savefig(OUT_DIR / "fig_prior_posterior.png", dpi=150, bbox_inches="tight")
+    prior_flat = prior_vals.ravel()
+    post_flat = post_vals.ravel()
+
+    ax.hist(prior_flat, bins=50, density=True, alpha=0.4, color="C0",
+            label="Prior")
+    ax.hist(post_flat, bins=50, density=True, alpha=0.6, color="C1",
+            label="Posterior")
+    ax.set_xlabel(var_labels.get(var, var))
+    ax.set_ylabel("Density")
+    ax.legend(fontsize=8)
+
+fig.suptitle("Prior vs Posterior: 5000 Observations Tighten All Parameters",
+             fontsize=13, y=1.01)
+fig.tight_layout()
+fig.savefig(OUT_DIR / "fig_prior_posterior.png", dpi=150, bbox_inches="tight")
 print(f"Saved {OUT_DIR / 'fig_prior_posterior.png'}")
