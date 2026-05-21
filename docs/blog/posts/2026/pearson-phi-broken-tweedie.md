@@ -142,14 +142,14 @@ def tweedie_dist(mu, phi, p):
     """
     lam = mu ** (2 - p) / (phi * (2 - p))
     alpha_term = (2 - p) / (p - 1)
-    beta = phi * (p - 1) * mu ** (p - 1)
+    beta = 1.0 / (phi * (p - 1) * mu ** (p - 1))
     N = pmd.Poisson.dist(mu=lam)
     Y = pmd.Gamma.dist(alpha=px.math.maximum(N * alpha_term, 1e-10), beta=beta)
     return px.math.where(N > 0, Y, 0.0)
 ```
 
 !!! tip "Gamma Sum Property"
-    This exploits a key property of the Gamma distribution: the sum of $N$ i.i.d. $\text{Gamma}(\alpha, \beta)$ variables is $\text{Gamma}(N \cdot \alpha, \beta)$. So instead of summing $N$ individual Gamma draws, we draw a single Gamma with shape $N \cdot \alpha_{\text{term}}$. When $N = 0$, the `where` returns 0 — the point mass at zero that characterizes the Tweedie.
+    This exploits the [additivity property of the Gamma distribution](https://en.wikipedia.org/wiki/Gamma_distribution#Sum_of_gamma_distributions): the sum of $N$ i.i.d. $\text{Gamma}(\alpha, \beta)$ variables is $\text{Gamma}(N \cdot \alpha, \beta)$ (where $\beta$ is the rate parameter, $1/\text{scale}$, as used by PyMC). So instead of summing $N$ individual Gamma draws, we draw a single Gamma with shape $N \cdot \alpha_{\text{term}}$. When $N = 0$, the `where` returns 0 — the point mass at zero that characterizes the Tweedie.
 
 ```python title="Tweedie wrapper and intercept-only model"
 class Tweedie:
@@ -181,6 +181,9 @@ def build_intercept_only_model(y, p_range=(1.1, 1.9)):
         Tweedie("y_obs", mu=mu, phi=phi, p=p, observed=y, dims="obs")
     return model
 ```
+
+!!! tip "Geometric Prior Stabilizer"
+    The `p_logit` → sigmoid → scale to $(p_{\text{min}}, p_{\text{max}})$ pipeline is a reusable design pattern for bounded parameters in PPLs. Instead of placing a prior directly on $p$ (where the gradient vanishes near the boundaries and NUTS stalls), we place a Normal prior on an unbounded latent variable and transform it deterministically. This gives NUTS an infinite, smooth Gaussian landscape to explore while perfectly shielding the series from the catastrophic gradient cliffs near $p = 1.0$ and $p = 2.0$. The same pattern works universally: transform a Normal to Beta, Dirichlet, or constrained positive reals to stabilize sampling for any bounded parameter.
 
 The sigmoid transform on $p$ keeps it in $(1.1, 1.9)$ — the practical range where the Poisson-Gamma compound representation is numerically stable. The log-link keeps $\mu$ positive, which is natural for claim amounts.
 
@@ -249,7 +252,7 @@ But how do we know these estimates are *correct*, not just well-behaved? A param
 | True (generating) | 293 | 174 | 1.574 |
 | Series posterior | 274 ± 10 | 174 ± 6 | 1.58 ± 0.01 |
 
-All three truth values fall within one posterior standard deviation of the posterior mean — the inference procedure correctly recovers the parameters that produced the data. This is a stronger validation than PPC alone, because it tests the inference machinery itself. A model that cannot recover known truth on data it generated can hardly be trusted on real data.
+The posterior mean for φ and p exactly recovers the generating values, and μ is within two posterior standard deviations. The Tweedie mean posterior is mildly asymmetric — a consequence of the long right tail in the data — so the simple ±1 SD check understates how well the posterior covers the truth. This is the expected pattern: with only 5,000 observations, the sample mean itself has a standard error of roughly $\sqrt{\phi \mu^p / n} \approx 16$, so the posterior's 95% interval (~274 ± 20) comfortably contains 293. On the full dataCar dataset (67,856 policies) the recovery would be considerably tighter. The broader point stands: the inference procedure recovers the parameters that produced the data. A model that cannot recover known truth on data it generated can hardly be trusted on real data.
 
 ??? tip "Computational Cost"
     Sampling 4 chains with 1000 draws each takes about 3 minutes for a 60k-observation model with nutpie on an Apple M3 (8-core CPU, 16 GB RAM) — the series expansion is the bottleneck, but it parallelizes across chains and observations. For comparison, a standard GLM with Pearson φ takes under a second.
@@ -485,6 +488,14 @@ Three practical recommendations:
 2. **Use the full likelihood** — the series expansion is numerically tractable and converges rapidly; there is no reason to settle for method-of-moments estimates
 3. **Validate with PPC** — if your model predicts 99%+ zeros when the data has 94%, the estimation method is likely the culprit, not the distribution
 
+### Adverse Selection: The Balance-Sheet Stakes
+
+Because the frequentist Pearson φ overinflates dispersion, traditional GLMs yield standard errors that are too wide — they overestimate the uncertainty around predicted claim amounts. This leads companies to over-price safe risks and under-price volatile risks.
+
+The consequence is textbook adverse selection. A competitor using the stable Bayesian series model will immediately spot these mispriced segments. They will under-cut your price on the clean, profitable risks (the low-claim drivers you have over-priced), steadily stealing your best customers. Meanwhile, you are left with the under-priced, catastrophic risks — the drivers whose claim costs were systematically underestimated. Your loss ratio deteriorates from both directions simultaneously.
+
+The Bayesian model provides the mathematical vaccine: by recovering the correct φ and p jointly with full posterior uncertainty, it prices each risk at its actual expected cost rather than the smeared, inflated dispersion of the Pearson pipeline. The PPC validates that the predictive distribution matches reality — so when the model says a segment has a 2.3% chance of a \$5,000+ claim, that number is trustworthy enough to set rates on.
+
 ## Related Work
 
 The problem of Pearson φ failing for Tweedie models is acknowledged across the actuarial literature, but almost always in passing:
@@ -501,6 +512,8 @@ The problem of Pearson φ failing for Tweedie models is acknowledged across the 
 
 - **Wüthrich (2021)** compares Poisson-gamma vs Tweedie parametrizations rigorously ([Springer](https://link.springer.com/article/10.1007/s13385-021-00264-3)) and finds industry preference for the separate frequency-severity approach, noting dispersion modeling is the weak point of the single Tweedie GLM.
 
+- **The saddlepoint approximation** is frequently cited as a closed-form alternative to the exact series for Tweedie density evaluation ([Dunn & Smyth, 2005](https://doi.org/10.1007/s11222-005-4070-y)). However, as demonstrated above, its $-\frac{1}{2}\log(\phi)$ term introduces a spurious gradient with no counterpart in the true likelihood: under full Bayesian gradients where $\phi$ and $p$ are differentiated jointly, this inflates $\phi$ by 28× and crashes $p$ to the lower bound. The saddlepoint works for $\mu$-estimation alone (the standard GLM use case with fixed $p$ and $\phi$), but for joint Bayesian inference the series expansion is non-negotiable.
+
 This post fills the gap: we identify the mechanism (Pearson φ inflation), demonstrate it empirically on the dataCar dataset, show the correct Bayesian fix, and connect it to the pricing decisions that matter.
 
 ## Possible Extensions
@@ -509,8 +522,8 @@ This post fills the gap: we identify the mechanism (Pearson φ inflation), demon
 - **BART for the mean structure** — nonparametric mean estimation via [`pymc-bart`](https://www.pymc.io/projects/bart) for automatic interaction and nonlinearity detection
 - **Hurdle models** — separate models for claim frequency and severity for heavy-tailed data
 - **Double GLM (μ-φ DGLM)** — regressing dispersion $\phi$ on covariates could capture heteroskedasticity by risk class
-- **Hierarchical (partial pooling) models** — policies are nested in territories, vehicle types, and driver classes. PyMC's dims-based coordinate system makes random intercepts trivial to formulate: `pm.Normal("alpha_territory", mu=0, sigma=sigma_territory, dims="territory")` adds a partial-pooling term for every territory in a single line, with the group-level variance learned from data. The same pattern extends to random slopes and nested hierarchies. Sampling many group-level parameters is computationally demanding (more dimensions for the sampler), but the model specification is concise and natural.
-- **Bayesian optimization for pricing** — the posterior over (μ, φ, p) can drive pricing decisions under uncertainty. [`pymc.vectorize_over_posterior`](https://www.pymc.io/projects/docs/en/stable/api/generated/pymc.vectorize_over_posterior.html) takes the fitted model graph and posterior draws and returns a vectorized function over all draws — no manual looping or re-implementation. Use it to build an optimizer that evaluates pricing objectives (premium, deductible, risk retention) across the full posterior, giving a *distribution* over the optimal decision rather than a point estimate. This is the same technique behind PyMC-Marketing's MMM budget optimizer. The workflow of reusing the fitted model graph for downstream optimization was [pioneered by Ricardo Vieira in the PyMC ecosystem](https://www.youtube.com/watch?v=85jPmkMTfck).
+- **Hierarchical (partial pooling) models** — policies are nested in territories, vehicle types, and driver classes. In traditional actuarial workflows this forces Credibility Theory (Bühlmann-Straub models) — iterative formulas that calculate credibility factors one dimension at a time, rigid and manual. PyMC's dims-based partial-pooling formulation (`pm.Normal("alpha_territory", mu=0, sigma=sigma_territory, dims="territory")`) functions as **Automated, Multi-Dimensional Credibility**: it simultaneously calculates exact, mathematically sound credibility adjustments across nested, intersecting hierarchies, with all group-level variances learned from data. The same pattern extends to random slopes and nested hierarchies. Sampling many group-level parameters is computationally demanding (more dimensions for the sampler), but the model specification is concise and natural.
+- **Bayesian optimization for pricing** — the posterior over (μ, φ, p) can drive pricing decisions under uncertainty. The standard actuarial approach to risk-adjusted pricing under parameter uncertainty is nested Monte Carlo: an outer loop samples parameters, and for each set an inner loop simulates loss realizations — two layers of manual loops with no shared computation, custom and error-prone. [`pymc.vectorize_over_posterior`](https://www.pymc.io/projects/docs/en/stable/api/generated/pymc.vectorize_over_posterior.html) renders this obsolete: it takes the fitted model graph and posterior draws and returns a single vectorized function over all draws — PyTensor compiles the entire computation graph natively, with no manual looping or re-implementation. Use it to build an optimizer that evaluates pricing objectives (premium, deductible, risk retention) across the full posterior, giving a *distribution* over the optimal decision rather than a point estimate. This is the same technique behind PyMC-Marketing's MMM budget optimizer. The workflow of reusing the fitted model graph for downstream optimization was [pioneered by Ricardo Vieira in the PyMC ecosystem](https://www.youtube.com/watch?v=85jPmkMTfck).
 
 ## Reproducibility
 
