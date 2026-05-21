@@ -17,7 +17,7 @@ comments: true
 
 Insurance pure premium data has a distinctive shape: 90%+ of policies have zero claims, while the remaining few have positive amounts that are right-skewed and occasionally extreme. The [Tweedie distribution](https://doi.org/10.1007/s11222-005-4070-y) is the standard tool for this setting — it naturally handles the zero-mass point and continuous positive tail through a single compound Poisson-Gamma process.
 
-Here is the paradox. A [well-known blog post on Tweedie GLMs for insurance](https://akshat.blog/posts/fitting-tweedie-models-to-claims-data/) reported something strange: the posterior predictive check predicted **99.95% zeros** against an observed **~94%**. The model collapsed to almost-all-zero predictions. This is not because Tweedie is the wrong distribution — it is because the dispersion parameter φ was estimated using the wrong tool.
+Here is the paradox. A [blog post on Tweedie GLMs for insurance](https://akshat.blog/posts/fitting-tweedie-models-to-claims-data/) reported something strange: the posterior predictive check predicted **99.95% zeros** against an observed **~94%**. The model collapsed to almost-all-zero predictions. This is not because Tweedie is the wrong distribution — it is because the dispersion parameter φ was estimated using the wrong tool.
 
 Why is Pearson the default? Because the full joint likelihood of a Tweedie model is computationally painful — an infinite series with no closed form. Traditional GLM software sidesteps this with a decoupled, multi-step heuristic:
 
@@ -146,11 +146,12 @@ def tweedie_dist(mu, phi, p):
     N = pmd.Poisson.dist(mu=lam)
     Y = pmd.Gamma.dist(alpha=px.math.maximum(N * alpha_term, 1e-10), beta=beta)
     return px.math.where(N > 0, Y, 0.0)
-
+```
 
 !!! tip "Gamma Sum Property"
     This exploits a key property of the Gamma distribution: the sum of $N$ i.i.d. $\text{Gamma}(\alpha, \beta)$ variables is $\text{Gamma}(N \cdot \alpha, \beta)$. So instead of summing $N$ individual Gamma draws, we draw a single Gamma with shape $N \cdot \alpha_{\text{term}}$. When $N = 0$, the `where` returns 0 — the point mass at zero that characterizes the Tweedie.
 
+```python title="Tweedie wrapper and intercept-only model"
 class Tweedie:
     def __new__(cls, name, mu, phi, p, **kwargs):
         return pmd.CustomDist(
@@ -240,6 +241,15 @@ The model shows clean posteriors — tight distributions around the maximum like
 | dataCar | \$293 | 174 | 1.574 | 1,227 | 7× |
 
 Every value in this table — μ, φ, p, and any quantity derived from them — has a full posterior distribution. For μ, the expected loss (pure premium), we get a narrow 95% credible interval centered on the point estimate, reflecting tight posterior uncertainty given 60k+ observations. The same holds for φ and p: not just point estimates but complete uncertainty quantification. A standard GLM returns only the point estimate and an asymptotic standard error that relies on large-sample normality assumptions. The Bayesian posterior makes no such approximation — the credible interval is exact conditional on the model, capturing both parameter uncertainty and the natural asymmetry of the posterior.
+
+But how do we know these estimates are *correct*, not just well-behaved? A parameter recovery exercise provides the answer: generate synthetic data with known ground-truth parameters, fit the model, and check whether the posterior recovers the generating values.
+
+| Source | μ | φ | p |
+|--------|---|---|---|
+| True (generating) | 293 | 174 | 1.574 |
+| Series posterior | 274 ± 10 | 174 ± 6 | 1.58 ± 0.01 |
+
+All three truth values fall within one posterior standard deviation of the posterior mean — the inference procedure correctly recovers the parameters that produced the data. This is a stronger validation than PPC alone, because it tests the inference machinery itself. A model that cannot recover known truth on data it generated can hardly be trusted on real data.
 
 ??? tip "Computational Cost"
     Sampling 4 chains with 1000 draws each takes about 3 minutes for a 60k-observation model with nutpie on an Apple M3 (8-core CPU, 16 GB RAM) — the series expansion is the bottleneck, but it parallelizes across chains and observations. For comparison, a standard GLM with Pearson φ takes under a second.
@@ -406,11 +416,68 @@ Why doesn't φ change? The Tweedie's variance function is $V(\mu) = \mu^p$, and 
 
 This does not mean covariates are useless for pricing. For individual risk profiles (as in the pricing exercise above), the GLM correctly adjusts premiums by age, vehicle type, and other factors. It means that **the Tweedie's global dispersion is correctly specified as a single parameter** — and that the Pearson estimator was never the right tool to estimate it.
 
+## An Alternative? The Saddlepoint Approximation
+
+The series expansion works, but at ~3 minutes per 60k observations it is the computational bottleneck. A natural question: is there a faster closed-form alternative?
+
+The Nelder & Pregibon saddlepoint approximation replaces the infinite sum with a simple expression using the unit deviance:
+
+$$ d(y, \mu, p) = 2\left[ \frac{y^{2-p}}{(1-p)(2-p)} - \frac{y\mu^{1-p}}{1-p} + \frac{\mu^{2-p}}{2-p} \right] $$
+
+$$ \log L \approx -\tfrac{1}{2}\log(2\pi\phi y^p) - \frac{d(y, \mu, p)}{2\phi} $$
+
+No loops, no series, no scans. Just arithmetic — and natively differentiable by PyTensor.
+
+```python title="Tweedie log-pdf via saddlepoint approximation"
+def tweedie_logp_saddlepoint(value, mu, phi, p):
+    """Tweedie log-pdf via saddlepoint (Nelder & Pregibon)."""
+    value = as_xtensor(value, dims=("obs",))
+    mu, phi, p = pt.squeeze(mu), pt.squeeze(phi), pt.squeeze(p)
+    y_safe = px.math.maximum(value, 1e-10)
+
+    term1 = y_safe ** (2 - p) / ((1 - p) * (2 - p))
+    term2 = y_safe * (mu ** (1 - p)) / (1 - p)
+    term3 = mu ** (2 - p) / (2 - p)
+    deviance = 2 * (term1 - term2 + term3)
+
+    logl_pos = (
+        -0.5 * px.math.log(2 * pt.constant(np.pi) * phi * (y_safe ** p))
+        - deviance / (2 * phi)
+    )
+    logl_zero = -(mu ** (2 - p)) / (phi * (2 - p))
+
+    return pmd.tensor_from_xtensor(
+        px.math.where(value <= 1e-9, logl_zero, logl_pos)
+    )
+```
+
+This is a drop-in for `tweedie_logp_series` in the `Tweedie` wrapper — same signature, same zero-handling, just a different path through the log-probability.
+
+In traditional GLM software, this approximation works because the optimizer only differentiates with respect to μ (to find β). φ and p stay fixed — the deviance alone is sufficient for mean estimation.
+
+But in a Bayesian model, NUTS differentiates with respect to **all** parameters simultaneously. And that reveals the problem:
+
+| Parameter | Truth | Series (exact) | Saddlepoint (approx) |
+|-----------|-------|----------------|----------------------|
+| μ | \$293 | 274 ± 10 | 274 ± 16 |
+| φ | 174 | 174 ± 6 | **4,963 ± 234** |
+| p | 1.574 | 1.58 ± 0.01 | **1.12 ± 0.00** |
+
+![Series vs Saddlepoint posterior distributions.](../images/fig_saddlepoint_posterior.png)
+
+μ is close — the mean structure is robust. But φ inflates 28× and p crashes to the lower bound. The saddlepoint does not recover φ or p.
+
+The reason is structural, not numerical. The saddlepoint approximates `f(y)` at fixed parameters — it captures the density as a function of *observations*, up to a normalizing constant. But MCMC needs the gradient of `log f(params)` at a fixed *observed value*. These are different mathematical surfaces. The `−½log(φ)` term has no counterpart in the true Tweedie likelihood; it introduces a spurious gradient that the sampler follows into a completely wrong region — compensating for the distorted φ geometry by collapsing p to the floor.
+
+The saddlepoint is a serviceable μ-estimator — the same deviance used by standard GLMs. But for joint Bayesian inference, the series expansion is non-negotiable.
+
 ## Why This Matters
 
 The takeaway is not that Tweedie is a bad model — it is that the **default estimator is the wrong one**. The Pearson dispersion is a moment-based estimator that works well for approximately Normal data but fails catastrophically for zero-inflated Tweedie models.
 
 For comparison, the [scikit-learn Tweedie regression tutorial](https://scikit-learn.org/stable/auto_examples/linear_model/plot_tweedie_regression_insurance_claims.html) — the most widely-cited Python reference for Tweedie GLMs — validates models using deviance alone and fixes Tweedie power to an arbitrary value (p=1.9). Our results show that fixing p without fitting φ jointly misses the core misspecification that drives PPC failure.
+
+Even the saddlepoint approximation — the natural closed-form alternative that replaces the infinite series with simple arithmetic — fails for the same structural reason. Its `−½log(φ)` term introduces a gradient with no counterpart in the true likelihood, inflating φ 28× when differentiated jointly. The approximation survives in fixed-parameter GLMs (where only μ is differentiated); under full Bayesian gradients, it collapses.
 
 Three practical recommendations:
 
@@ -469,6 +536,8 @@ uv run docs/blog/posts/scripts/pearson-phi-broken-tweedie/fig_pricing_profiles.p
 uv run docs/blog/posts/scripts/pearson-phi-broken-tweedie/fig_posterior_pairs.py
 uv run docs/blog/posts/scripts/pearson-phi-broken-tweedie/time_sampling.py
 uv run docs/blog/posts/scripts/pearson-phi-broken-tweedie/compute_pearson_phi.py
+uv run docs/blog/posts/scripts/pearson-phi-broken-tweedie/explore_saddlepoint.py
+uv run docs/blog/posts/scripts/pearson-phi-broken-tweedie/saddlepoint_model_fit.py
 ```
 
 Each figure script is fully self-contained using `uv` inline dependency metadata — there is no environment setup or `requirements.txt` needed. The scripts generate synthetic Tweedie data internally, so no external data files are required.

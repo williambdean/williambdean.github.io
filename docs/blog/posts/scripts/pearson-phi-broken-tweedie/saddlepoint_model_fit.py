@@ -1,5 +1,5 @@
 # /// script
-# dependencies = ["pymc", "nutpie", "numpy", "pytensor", "matplotlib"]
+# dependencies = ["pymc", "nutpie", "numpy", "pytensor", "matplotlib", "arviz"]
 # ///
 
 """Fit Tweedie model with both Series and Saddlepoint logp, compare posteriors.
@@ -242,17 +242,6 @@ if t_saddle > 0:
     print(f"\nTiming: series={t_series:.1f}s, saddlepoint={t_saddle:.1f}s, "
           f"speedup={t_series/t_saddle:.1f}x")
 
-# ── Convergence ─────────────────────────────────────────────────────────
-
-print()
-print("=" * 60)
-print("CONVERGENCE (R-hat)")
-print("=" * 60)
-for name in ["mu", "phi", "p"]:
-    rhat_s = float(idata_series.posterior[name].rhat)
-    rhat_sp = float(idata_saddle.posterior[name].rhat)
-    print(f"  {name}: series R-hat={rhat_s:.4f}, saddle R-hat={rhat_sp:.4f}")
-
 # ── Figure ──────────────────────────────────────────────────────────────
 
 fig, axes = plt.subplots(1, 3, figsize=(15, 4.5))
@@ -284,6 +273,19 @@ plt.tight_layout()
 plt.savefig(OUT_DIR / "fig_saddlepoint_posterior.png", dpi=150, bbox_inches="tight")
 plt.close()
 print(f"\nSaved {OUT_DIR / 'fig_saddlepoint_posterior.png'}")
+
+# ── Convergence ─────────────────────────────────────────────────────────
+
+import arviz as az
+
+print()
+print("=" * 60)
+print("CONVERGENCE (R-hat)")
+print("=" * 60)
+for name in ["mu", "phi", "p"]:
+    rhat_s = float(az.rhat(idata_series.posterior[name]))
+    rhat_sp = float(az.rhat(idata_saddle.posterior[name]))
+    print(f"  {name}: series R-hat={rhat_s:.4f}, saddle R-hat={rhat_sp:.4f}")
 
 # ── Summary ─────────────────────────────────────────────────────────────
 
