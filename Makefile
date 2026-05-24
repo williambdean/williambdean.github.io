@@ -1,2 +1,4 @@
+CAIRO_LIB := $(shell pkg-config --variable=libdir cairo)
+
 html: 
-	uv run mkdocs serve
+	DYLD_FALLBACK_LIBRARY_PATH=$(CAIRO_LIB) uv run mkdocs serve

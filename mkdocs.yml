@@ -34,6 +34,7 @@ plugins:
   - search
   - mkdocs-video
   - tags
+  - social
   - markdownextradata
   - git-revision-date-localized:
       enable_creation_date: true
@@ -42,6 +43,7 @@ plugins:
       categories:
         - tags
       comments_path: "#__comments"
+      image: images/social-banner.png
   # - mkdocs-jupyter
 
 markdown_extensions:
