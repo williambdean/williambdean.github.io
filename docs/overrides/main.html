@@ -11,6 +11,12 @@
       "headline": {{ page.title | tojson }},
       "description": {{ description | tojson }},
       "url": {{ page.canonical_url | tojson }},
+      {% if page.meta.git_creation_date_localized_raw_iso_date %}
+      "datePublished": {{ page.meta.git_creation_date_localized_raw_iso_date | tojson }},
+      {% endif %}
+      {% if page.meta.git_revision_date_localized_raw_iso_date %}
+      "dateModified": {{ page.meta.git_revision_date_localized_raw_iso_date | tojson }},
+      {% endif %}
       "author": {
         "@type": "Person",
         "name": "Will Dean",
@@ -18,6 +24,33 @@
       }
     }
     </script>
+  {% endif %}
+  {% if not page.is_homepage and page.title %}
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": {{ config.site_name | tojson }},
+        "item": {{ config.site_url | tojson }}
+      },{% if "blog/posts/" in page.url %}
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Blog",
+        "item": {{ (config.site_url + "blog/") | tojson }}
+      },
+      {% endif %}{
+        "@type": "ListItem",
+        "position": {% if "blog/posts/" in page.url %}3{% else %}2{% endif %},
+        "name": {{ page.title | tojson }}
+      }
+    ]
+  }
+  </script>
   {% endif %}
   <script type="application/ld+json">
   {
