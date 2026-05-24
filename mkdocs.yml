@@ -37,6 +37,11 @@ plugins:
   - markdownextradata
   - git-revision-date-localized:
       enable_creation_date: true
+  - rss:
+      match_path: blog/posts/.*
+      categories:
+        - tags
+      comments_path: "#__comments"
   # - mkdocs-jupyter
 
 markdown_extensions:
@@ -62,6 +67,8 @@ extra:
       link: https://github.com/williambdean
     - icon: fontawesome/brands/linkedin
       link: https://www.linkedin.com/in/williambdean/
+    - icon: fontawesome/solid/rss
+      link: /feed_rss_created.xml
 
 nav:
   - Welcome: index.md
