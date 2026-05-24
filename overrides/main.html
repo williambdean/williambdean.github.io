@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block extrahead %}
+  <meta property="og:image" content="{{ config.site_url }}images/social-banner.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  {% if "blog/posts/" in page.url %}
+    {% set description = page.meta.description | default(config.site_description) %}
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      "headline": {{ page.title | tojson }},
+      "description": {{ description | tojson }},
+      "url": {{ page.canonical_url | tojson }},
+      "author": {
+        "@type": "Person",
+        "name": "Will Dean",
+        "url": {{ config.site_url | tojson }}
+      }
+    }
+    </script>
+  {% endif %}
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    "name": "Will Dean",
+    "url": {{ config.site_url | tojson }},
+    "sameAs": [
+      "https://github.com/williambdean",
+      "https://www.linkedin.com/in/williambdean/"
+    ]
+  }
+  </script>
+  {% if page.is_homepage %}
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": {{ config.site_name | tojson }},
+    "url": {{ config.site_url | tojson }},
+    "description": {{ config.site_description | tojson }},
+    "author": {
+      "@type": "Person",
+      "name": "Will Dean"
+    }
+  }
+  </script>
+  {% endif %}
+{% endblock %}
