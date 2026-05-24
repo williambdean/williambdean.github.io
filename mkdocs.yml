@@ -54,14 +54,14 @@ markdown_extensions:
       emoji_generator: !!python/name:material.extensions.emoji.to_svg
 
 extra:
+  analytics:
+    provider: google
+    property: G-R1GGWK6LCW
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/williambdean
     - icon: fontawesome/brands/linkedin
       link: https://www.linkedin.com/in/williambdean/
-  analytics:
-    provider: google
-    property: G-R1GGWK6LCW
 
 nav:
   - Welcome: index.md
