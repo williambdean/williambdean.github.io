@@ -223,7 +223,7 @@ zero_rate = np.exp(-lam)
 
 The 95% prior intervals comfortably cover the observed values. The priors are weak enough that the data drives the posterior, but informative enough to keep sampling in a reasonable region — no need for tight constraints. Sensitivity checks (widening or shifting the priors) produce the same posterior estimates, confirming the data dominates.
 
-But how much does the posterior actually tighten relative to these priors? We can compare the full prior and posterior distributions directly:
+But how much does the posterior tighten relative to these priors once we add data? Let's simulate: fit the model to 5,000 synthetic Tweedie observations and compare the full prior and posterior distributions directly:
 
 ![Prior vs Posterior: 5000 synthetic Tweedie observations tighten all parameter distributions.](../images/fig_prior_posterior.png)
 
