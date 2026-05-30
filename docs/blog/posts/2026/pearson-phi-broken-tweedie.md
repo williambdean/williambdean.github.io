@@ -10,6 +10,8 @@ comments: true
 
 # Pearson φ is Broken: Bayesian Tweedie GLMs for Insurance Pure Premiums
 
+<center>![Cover infographic: Pearson χ² vs Bayesian series](../images/fig_cover.png)</center>
+
 !!! tip "TL;DR"
     Pearson's chi-square dispersion estimator inflates φ by 7× for zero-inflated Tweedie models, making the model predict 99%+ zeros against 93% observed. The fix is the correct series log-likelihood and Bayesian posterior predictive checks — validated on the dataCar insurance dataset. Code and figures are fully reproducible.
 
@@ -35,16 +37,15 @@ The Pearson dispersion estimate is:
 
 $$ \hat{\phi}_{\text{Pearson}} = \frac{1}{n-p} \sum_{i=1}^n \frac{(y_i - \hat{\mu}_i)^2}{V(\hat{\mu}_i)} $$
 
-For the Tweedie distribution, $V(\mu) = \mu^p$. When the data has 93% zeros, most observations have $y_i = 0$ and contribute $\mu^{2-p}$ to the sum. With $\mu \approx 200$ and $p \approx 1.6$, this gives $\mu^{2-p} \approx 7$ per zero. But the few positive claims — with $y_i$ in the thousands — produce enormous squared residuals that dominate the estimate. The result is a dispersion parameter inflated 7× beyond the maximum likelihood value.
+For the Tweedie distribution, $V(\mu) = \mu^p$. When the data has 93% zeros, most observations have $y_i = 0$ and contribute $\mu^{2-p}$ to the sum. With $\mu \approx 200$ and $p \approx 1.6$, this gives $\mu^{2-p} \approx 7$ per zero. But the 7% of positive claims — with $y_i$ in the thousands — produce enormous squared residuals that dominate the estimate. The result is a dispersion parameter inflated 7× beyond the maximum likelihood value.
 
-The likelihood surface tells the full story:
+The profile likelihood reveals the problem: with the φ axis tightened to show the peak (left: φ ∈ [0, 600]), the Pearson estimate at 1,227 is completely off-screen. The ΔLL bracket on the right spans from the MLE peak down to the log-likelihood at the Pearson estimate — the gap is enormous.
 
-![Profile likelihood for φ, showing MLE vs Pearson estimates.](../images/fig_profile_likelihood.png)
+![Profile likelihood for φ at fixed μ and p. Tighter x-axes reveal the peak curvature at the MLE (green). The red arrow marks the Pearson estimate far off-screen; the bracket shows the ΔLL between MLE and Pearson log-likelihoods.](../images/fig_profile_likelihood.png)
 
-??? info "Why the Likelihood Ratio Matters"
-    The log-likelihood difference ΔLL is not just a statistical nicety. It directly translates to predictive performance. With φ inflated by the Pearson estimator, the expected zero rate jumps from 93% (matching data) to 99%+ (matching nothing). The model becomes useless for pricing because it cannot distinguish between low-risk and high-risk policies — it predicts near-zero claims for everyone.
+The log-likelihood difference ΔLL is not just a statistical nicety. It directly translates to predictive performance. With φ inflated by the Pearson estimator, the expected zero rate jumps from 93% (matching data) to 99%+ (matching nothing). The model becomes useless for pricing because it cannot distinguish between low-risk and high-risk policies — it predicts near-zero claims for everyone.
 
-The pipeline is not just slow or inconvenient — it is structurally incapable of catching the dispersion inflation. The fix is to stop treating the parameters as a sequence of isolated sub-problems and instead estimate them jointly:
+The pipeline is not just biased — it is structurally blind to its own bias. The fix is to stop treating the parameters as a sequence of isolated sub-problems and instead estimate them jointly:
 
 | Parameter | Traditional GLM | Bayesian PyMC |
 |-----------|----------------|---------------|
@@ -52,6 +53,8 @@ The pipeline is not just slow or inconvenient — it is structurally incapable o
 | **Dispersion φ** | Conditional estimate (Pearson or MLE, given fixed p) | Sampled concurrently with its own prior |
 | **Regression β** | Point estimate via IRLS (p and φ fixed) | Joint posterior via NUTS, absorbing p/φ uncertainty |
 | **Validation** | Deviance metrics, residual plots | Prior predictive checks, PPC, full distributional validation |
+
+The joint estimation advantage matters most when data is thin. A small insurer with a sparse portfolio cannot rely on asymptotic consistency to wash out Pearson's bias — but they *can* encode decades of pricing expertise into informative priors on φ and p, constraining the posterior to reasonable territory. The same framework extends naturally to dispersion regression (modeling φ as a function of risk class) or hierarchical partial pooling across regions — capabilities the sequential pipeline cannot offer without a complete redesign.
 
 ## The Fix: Series Log-PDF
 
@@ -188,7 +191,7 @@ def build_intercept_only_model(y, p_range=(1.1, 1.9)):
 The sigmoid transform on $p$ keeps it in $(1.1, 1.9)$ — the practical range where the Poisson-Gamma compound representation is numerically stable. The log-link keeps $\mu$ positive, which is natural for claim amounts.
 
 ??? info "Why p ∈ (1, 2) Matters"
-    The Tweedie distribution for $p \in (1, 2)$ is a **compound Poisson-Gamma process** ([Jørgensen, 1997](https://doi.org/10.1201/9780203743441)): the number of claims $N$ follows a Poisson distribution, and each individual claim amount follows a Gamma distribution. The sum of $N$ Gamma variables gives the total claim amount — producing the characteristic insurance shape: a point mass at zero and a continuous, right-skewed positive tail.
+    The Tweedie distribution for $p \in (1, 2)$ is a **compound Poisson-Gamma process** ([Jørgensen, 1997](https://books.google.com/books?id=0gO7bgs_eSYC)): the number of claims $N$ follows a Poisson distribution, and each individual claim amount follows a Gamma distribution. The sum of $N$ Gamma variables gives the total claim amount — producing the characteristic insurance shape: a point mass at zero and a continuous, right-skewed positive tail.
 
     **What happens near the boundaries:**
 
@@ -257,7 +260,7 @@ The posterior mean for φ and p exactly recovers the generating values, and μ i
 ??? tip "Computational Cost"
     Sampling 4 chains with 1000 draws each takes about 3 minutes for a 60k-observation model with nutpie on an Apple M3 (8-core CPU, 16 GB RAM) — the series expansion is the bottleneck, but it parallelizes across chains and observations. For comparison, a standard GLM with Pearson φ takes under a second.
 
-The contrast between MLE $\phi$ and Pearson $\phi$ is the central finding. Pearson inflates $\phi$ by 7× on dataCar. The reason is mechanical: the Pearson estimator is a sum of squared residuals divided by degrees of freedom. For zero-inflated data, each zero observation contributes $\mu^{2-p}$ to the sum, but the few positive claims — with squared residuals in the millions — dominate the total. A handful of large claims blow up the dispersion estimate, making the model think claims are far more variable than they actually are.
+The contrast between MLE $\phi$ and Pearson $\phi$ is the central finding. Pearson inflates $\phi$ by 7× on dataCar. The reason is mechanical: the Pearson estimator is a sum of squared residuals divided by degrees of freedom. For zero-inflated data, each zero observation contributes $\mu^{2-p}$ to the sum, but the 7% of positive claims — with squared residuals in the millions — dominate the total. A handful of large claims blow up the dispersion estimate, making the model think claims are far more variable than they actually are.
 
 Why does inflated $\phi$ break the model? The expected zero probability is:
 
@@ -488,6 +491,18 @@ Three practical recommendations:
 2. **Use the full likelihood** — the series expansion is numerically tractable and converges rapidly; there is no reason to settle for method-of-moments estimates
 3. **Validate with PPC** — if your model predicts 99%+ zeros when the data has 94%, the estimation method is likely the culprit, not the distribution
 
+### Are there other ways to estimate φ?
+
+Pearson is the default, not the only option. The alternatives each make a different tradeoff:
+
+- **MLE via series expansion** (R's `tweedie.profile()` with `phi.method="mle"`) — estimates φ conditionally on a profile-searched p. Used by the post as a baseline. No posterior uncertainty, no PPC.
+- **DGLM with REML** ([Smyth & Jørgensen, 2002](https://www.casact.org/sites/default/files/old/astin_vol32no1_143.pdf)) — models φ with a second GLM. Useful when dispersion varies by risk class. Uses approximate REML, not exact likelihood.
+- **EM algorithm** ([Gao, 2024](https://doi.org/10.1016/j.insmatheco.2023.10.002)) — reformulates Tweedie as iteratively re-weighted Poisson-gamma. Avoids the saddlepoint approximation entirely — notably, the paper notes the saddlepoint "is poor when the proportion of zero claims is large."
+- **Rosenlund estimator** ([Rosenlund, 2010](https://www.casact.org/abstract/dispersion-estimates-poisson-and-tweedie-models)) — uses claim count information directly. Explicitly designed to replace Pearson for insurance data. Works well when tariff cells have enough claims, less so with sparse data.
+- **Bayesian MCMC** ([Zhang, 2013](https://doi.org/10.1007/s11222-012-9343-7), R package `cplm`) — uses the same series expansion for Bayesian inference with MH-within-Gibbs. Supports mixed models and zero-inflation. The post builds on this foundation with nutpie (modern HMC/NUTS with optimized mass matrix) and makes PPC the diagnostic that catches the Pearson failure.
+
+The common thread: every alternative requires more computation than Pearson. The post's point is that the extra computation matters — because the cost of Pearson's bias is invisible without full predictive validation.
+
 ### Adverse Selection: The Balance-Sheet Stakes
 
 Because the frequentist Pearson φ overinflates dispersion, traditional GLMs yield standard errors that are too wide — they overestimate the uncertainty around predicted claim amounts. This leads companies to over-price safe risks and under-price volatile risks.
@@ -498,30 +513,26 @@ The Bayesian model provides the mathematical vaccine: by recovering the correct 
 
 ## Related Work
 
-The problem of Pearson φ failing for Tweedie models is acknowledged across the actuarial literature, but almost always in passing:
+Pearson φ inflation for zero-inflated Tweedie models has been noted across several strands of the actuarial and statistical literature — though rarely identified as the primary failure mechanism and never connected to PPC-driven diagnosis.
 
-- **SAS HPGENSELECT** outputs Pearson χ²/DF = 472 for the Swedish motor Tweedie GLM ([SAS documentation](https://communities.sas.com/t5/SAS-Code-Examples/Fitting-Tweedie-s-Compound-Poisson-Gamma-Mixture-Model-by-Using/ta-p/908438)) with no comment on whether φ ≈ 2,147 is reasonable. The model is presented without distributional validation.
+**Bayesian Tweedie inference.** The series expansion for Tweedie density evaluation ([Dunn & Smyth, 2005](https://doi.org/10.1007/s11222-005-4070-y)) made full Bayesian MCMC feasible. [Zhang (2013)](https://doi.org/10.1007/s11222-012-9343-7) implemented likelihood-based and Bayesian methods for Tweedie GLMs and mixed models in the R package `cplm`, using the same series likelihood with Metropolis-Hastings within Gibbs. The post extends this approach with nutpie (HMC/NUTS with optimized mass matrix) and, critically, adds PPC as the diagnostic that exposes Pearson's failure. The post's core finding — that inflated φ drives near-zero predictions — is independent of the sampler choice and would apply equally to any pipeline using the Pearson estimator.
 
-- **glmmTMB developers** discovered the Tweedie variance function was an unimplemented placeholder — Pearson residuals were simply unavailable ([GitHub issue #293](https://github.com/glmmTMB/glmmTMB/issues/293)). The issue thread notes "variance functions that take more than two parameters" lack framework support.
+**Dispersion estimation.** [Smyth & Jørgensen (2002)](https://www.casact.org/sites/default/files/old/astin_vol32no1_143.pdf) proposed double generalized linear models (DGLMs) to model φ with a second GLM, using approximate REML. On Swedish motor data they found p ≈ 1.725 and demonstrated that dispersion effects are highly significant. The DGLM framework ([Nelder & Pregibon, 1987](https://doi.org/10.1093/biomet/74.2.221); [Smyth & Verbyla, 1999](https://doi.org/10.1002/(SICI)1099-095X(199911/12)10:6<695::AID-ENV382>3.0.CO;2-M)) remains the most thorough frequentist treatment of Tweedie dispersion modeling. [Rosenlund (2010)](https://www.casact.org/abstract/dispersion-estimates-poisson-and-tweedie-models) explicitly states that "Pearson's chi-square-based estimate is normally unsuitable for GLM log link claim frequency analysis in insurance" and proposes an alternative using claim count information. [Bonat & Kokonendji (2017)](https://doi.org/10.1080/00949655.2017.1318876) proposed quasi- and pseudo-likelihood approaches as computationally cheaper alternatives to MLE, finding that MLE for dispersion has coverage rate zero near boundary values of p. On the software side, SAS HPGENSELECT outputs Pearson χ²/DF = 472 for the Swedish motor Tweedie GLM ([SAS documentation](https://communities.sas.com/t5/SAS-Code-Examples/Fitting-Tweedie-s-Compound-Poisson-Mixture-Model-by-Using/ta-p/908438)) with no comment on whether φ ≈ 2,147 is reasonable; and the glmmTMB developers discovered Tweedie variance functions were an unimplemented placeholder — Pearson residuals were simply unavailable ([GitHub issue #293](https://github.com/glmmTMB/glmmTMB/issues/293)).
 
-- **The CAS** notes the "Pearson estimate is normally unsuitable for GLM log link claim frequency analysis" and proposes an alternative dispersion estimator for Tweedie models ([CAS abstract](https://www.casact.org/abstract/dispersion-estimates-poisson-and-tweedie-models)).
+**EM algorithm.** [Gao (2024)](https://doi.org/10.1016/j.insmatheco.2023.10.002) reformulates Tweedie as an iteratively re-weighted Poisson-gamma, estimating φ without the saddlepoint approximation. The paper notes the DGLM approach "relies on the accuracy of the saddlepoint approximation, which is poor when the proportion of zero claims is large" — the same diagnosis as this post, approached from a frequentist EM direction rather than a Bayesian one.
 
-- **Stack Exchange** users ask whether Tweedie GLM residuals should be Normal and whether the Shapiro test is appropriate ([Cross Validated](https://stats.stackexchange.com/questions/363955/non-normal-residuals-for-tweedie-glm)). The answer is no — quantile residuals are the standard tool — but this confusion persists.
+**Zero-inflated Tweedie.** [Zhou, Qian & Yang (2018)](https://arxiv.org/abs/1811.10192) proposed a zero-inflated Tweedie mixture model (EMTboost), noting that "even traditional Tweedie model may not be satisfactory for fitting the data" when zeros are excessive. A follow-up (2024, [arXiv](https://arxiv.org/abs/2405.14990)) explicitly states that "excess zeros can inflate the dispersion estimation of the Tweedie model which in turn deteriorates the accuracy of the mean estimation" — directly echoing this post's thesis.
 
-- **Scikit-learn's** [Tweedie regression tutorial](https://scikit-learn.org/stable/auto_examples/linear_model/plot_tweedie_regression_insurance_claims.html) validates models via deviance only — it never checks whether the distributional assumptions hold. The observed vs. predicted plot shows systematic under-prediction, but the reason (dispersion misspecification) is not discussed.
+**Alternative parametrizations.** [Wüthrich (2021)](https://link.springer.com/article/10.1007/s13385-021-00264-3) systematically compares Poisson-gamma vs. Tweedie parametrizations and finds the industry preference for separate frequency-severity models justified. [Quijano Xacur & Garrido (2015)](https://link.springer.com/article/10.1007/s13385-015-0108-5) show that under a Tweedie GLM, the induced frequency and severity coefficients follow a constrained proportional relationship. And on Cross Validated, Gordon Smyth himself explains why `tweedie.profile()` uses MLE for φ instead of Pearson: using the Pearson estimator "would be invalid" for profile likelihood ([Smyth, 2022](https://stats.stackexchange.com/questions/595173/tweedie-dispersion-parameter-estimation-methods)).
 
-- **Wüthrich (2021)** compares Poisson-gamma vs Tweedie parametrizations rigorously ([Springer](https://link.springer.com/article/10.1007/s13385-021-00264-3)) and finds industry preference for the separate frequency-severity approach, noting dispersion modeling is the weak point of the single Tweedie GLM.
-
-- **The saddlepoint approximation** is frequently cited as a closed-form alternative to the exact series for Tweedie density evaluation ([Dunn & Smyth, 2005](https://doi.org/10.1007/s11222-005-4070-y)). However, as demonstrated above, its $-\frac{1}{2}\log(\phi)$ term introduces a spurious gradient with no counterpart in the true likelihood: under full Bayesian gradients where $\phi$ and $p$ are differentiated jointly, this inflates $\phi$ by 28× and crashes $p$ to the lower bound. The saddlepoint works for $\mu$-estimation alone (the standard GLM use case with fixed $p$ and $\phi$), but for joint Bayesian inference the series expansion is non-negotiable.
-
-This post fills the gap: we identify the mechanism (Pearson φ inflation), demonstrate it empirically on the dataCar dataset, show the correct Bayesian fix, and connect it to the pricing decisions that matter.
+This post fills the gap: it identifies the *mechanism* (Pearson φ inflation), demonstrates it empirically on the dataCar dataset with a 7× inflation factor, shows PPC as the diagnostic tool that catches the failure, and connects the estimate to pricing decisions that matter.
 
 ## Possible Extensions
 
 - **$p > 2$ for severity modeling** — the alternating sin series handles this case, though identifiability weakens
 - **BART for the mean structure** — nonparametric mean estimation via [`pymc-bart`](https://www.pymc.io/projects/bart) for automatic interaction and nonlinearity detection
 - **Hurdle models** — separate models for claim frequency and severity for heavy-tailed data
-- **Double GLM (μ-φ DGLM)** — regressing dispersion $\phi$ on covariates could capture heteroskedasticity by risk class
+- **Double GLM (μ-φ DGLM)** ([Smyth & Jørgensen, 2002](https://www.casact.org/sites/default/files/old/astin_vol32no1_143.pdf)) — regressing dispersion $\phi$ on covariates captures heteroskedasticity by risk class. Combined with Bayesian partial pooling, this is the natural next step beyond the constant-dispersion model presented here.
 - **Hierarchical (partial pooling) models** — policies are nested in territories, vehicle types, and driver classes. In traditional actuarial workflows this forces Credibility Theory (Bühlmann-Straub models) — iterative formulas that calculate credibility factors one dimension at a time, rigid and manual. PyMC's dims-based partial-pooling formulation (`pm.Normal("alpha_territory", mu=0, sigma=sigma_territory, dims="territory")`) functions as **Automated, Multi-Dimensional Credibility**: it simultaneously calculates exact, mathematically sound credibility adjustments across nested, intersecting hierarchies, with all group-level variances learned from data. The same pattern extends to random slopes and nested hierarchies. Sampling many group-level parameters is computationally demanding (more dimensions for the sampler), but the model specification is concise and natural.
 - **Bayesian optimization for pricing** — the posterior over (μ, φ, p) can drive pricing decisions under uncertainty. The standard actuarial approach to risk-adjusted pricing under parameter uncertainty is nested Monte Carlo: an outer loop samples parameters, and for each set an inner loop simulates loss realizations — two layers of manual loops with no shared computation, custom and error-prone. [`pymc.vectorize_over_posterior`](https://www.pymc.io/projects/docs/en/stable/api/generated/pymc.vectorize_over_posterior.html) renders this obsolete: it takes the fitted model graph and posterior draws and returns a single vectorized function over all draws — PyTensor compiles the entire computation graph natively, with no manual looping or re-implementation. Use it to build an optimizer that evaluates pricing objectives (premium, deductible, risk retention) across the full posterior, giving a *distribution* over the optimal decision rather than a point estimate. This is the same technique behind PyMC-Marketing's MMM budget optimizer. The workflow of reusing the fitted model graph for downstream optimization was [pioneered by Ricardo Vieira in the PyMC ecosystem](https://www.youtube.com/watch?v=85jPmkMTfck).
 
@@ -558,7 +569,7 @@ Each figure script is fully self-contained using `uv` inline dependency metadata
 ## Further Reading
 
 - Dunn, P. K. & Smyth, G. K. (2005). [Series evaluation of Tweedie exponential dispersion model densities](https://doi.org/10.1007/s11222-005-4070-y). *Statistics and Computing*, 15(4), 267-280.
-- Jørgensen, B. (1997). *[The Theory of Dispersion Models](https://doi.org/10.1201/9780203743441)*. Chapman & Hall.
+- Jørgensen, B. (1997). *[The Theory of Dispersion Models](https://books.google.com/books?id=0gO7bgs_eSYC)*. Chapman & Hall.
 - Smyth, G. K. & Jørgensen, B. (2002). [Fitting Tweedie's compound Poisson model to insurance claims data: Dispersion modelling](https://www.casact.org/sites/default/files/old/astin_vol32no1_143.pdf). *ASTIN Bulletin*, 32(1), 143-157.
 - De Jong, P. & Heller, G. Z. (2008). *[Generalized Linear Models for Insurance Data](https://doi.org/10.1017/CBO9780511755408)*. Cambridge University Press.
 - Wüthrich, M. V. (2021). [Making Tweedie's compound Poisson model more accessible](https://link.springer.com/article/10.1007/s13385-021-00264-3). *European Actuarial Journal*.
@@ -567,3 +578,10 @@ Each figure script is fully self-contained using `uv` inline dependency metadata
 - [Akshat Dwivedi: Specifying an offset in a Tweedie model with identity link](https://akshat.blog/posts/tweedie-with-identity-link-and-offset/) — technical deep dive on offsets and weights.
 - [Ricardo Vieira: Graph reuse and optimization in PyMC](https://www.youtube.com/watch?v=85jPmkMTfck) — the `vectorize_over_posterior` workflow for pricing optimization.
 - [Gao, G. (2024). Fitting Tweedie's compound Poisson model to pure premium with the EM algorithm](https://doi.org/10.1016/j.insmatheco.2023.10.002). *Insurance: Mathematics and Economics*, 114, 29-42.
+- Zhang, Y. (2013). [Likelihood-based and Bayesian methods for Tweedie compound Poisson linear mixed models](https://doi.org/10.1007/s11222-012-9343-7). *Statistics and Computing*, 23, 743-757.
+- Rosenlund, S. (2010). [Dispersion estimates for Poisson and Tweedie models](https://doi.org/10.2143/AST.40.1.2049229). *ASTIN Bulletin*, 40(1), 1-9.
+- Bonat, W. H. & Kokonendji, C. C. (2017). [Flexible Tweedie regression models for continuous data](https://doi.org/10.1080/00949655.2017.1318876). *Journal of Statistical Computation and Simulation*, 87(11), 2138-2152.
+- Zhou, H., Qian, W. & Yang, Y. (2020). [Tweedie gradient boosting for extremely unbalanced zero-inflated data](https://doi.org/10.1080/03610918.2020.1772302). *Communications in Statistics — Simulation and Computation*, 51(10), 5507-5529.
+- Quijano Xacur, O. A. & Garrido, J. (2015). [Generalised linear models for aggregate claims: to Tweedie or not?](https://link.springer.com/article/10.1007/s13385-015-0108-5) *European Actuarial Journal*, 5, 181-202.
+- Dunn, P. K. & Smyth, G. K. (2018). *[Generalized Linear Models With Examples in R](https://doi.org/10.1007/978-1-4419-0118-7)*. Springer.
+- Jørgensen, B. & de Souza, M. C. P. (1994). [Fitting Tweedie's compound Poisson model to insurance claims data](https://doi.org/10.1080/03461238.1994.10413930). *Scandinavian Actuarial Journal*, 1994(1), 69-93.
