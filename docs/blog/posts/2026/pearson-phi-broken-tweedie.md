@@ -105,10 +105,8 @@ def tweedie_logp_series(value, mu, phi, p, n_terms=20):
 
 The key implementation choices:
 
-- **Everything in log-space** — avoids underflow from the tiny density values
-- **`sum(dim="term")` for series summation** — named dimension reduction instead of `axis=0`
+- **`pytensor.xtensor` with named dims** — `sum(dim="term")` for readable series marginalization, and automatic dim-name broadcasting (``j`` with dims ``("term",)`` and ``value`` with dims ``("obs",)`` naturally broadcast to ``("term", "obs")``), replacing manual ``reshape((-1, 1))``
 - **`maximum` for gamma function inputs** — prevents domain errors at alpha near zero
-- **Dim-name broadcasting** — ``j`` with dims ``("term",)`` and ``value`` with dims ``("obs",)`` broadcast naturally to ``("term", "obs")``, replacing the manual ``reshape((-1, 1))`` needed in the tensor version
 
 This `tweedie_logp_series` function becomes the `logp` for the `Tweedie` wrapper below — it is what MCMC uses to evaluate the likelihood of observed data at each step.
 
@@ -260,15 +258,13 @@ The posterior mean for φ and p exactly recovers the generating values, and μ i
 ??? tip "Computational Cost"
     Sampling 4 chains with 1000 draws each takes about 3 minutes for a 60k-observation model with nutpie on an Apple M3 (8-core CPU, 16 GB RAM) — the series expansion is the bottleneck, but it parallelizes across chains and observations. For comparison, a standard GLM with Pearson φ takes under a second.
 
-The contrast between MLE $\phi$ and Pearson $\phi$ is the central finding. Pearson inflates $\phi$ by 7× on dataCar. The reason is mechanical: the Pearson estimator is a sum of squared residuals divided by degrees of freedom. For zero-inflated data, each zero observation contributes $\mu^{2-p}$ to the sum, but the 7% of positive claims — with squared residuals in the millions — dominate the total. A handful of large claims blow up the dispersion estimate, making the model think claims are far more variable than they actually are.
-
-Why does inflated $\phi$ break the model? The expected zero probability is:
+Pearson inflates $\phi$ by 7× on dataCar. The expected zero probability is:
 
 $$P(Y=0) = \exp\left(-\frac{\mu^{2-p}}{\phi (2-p)}\right)$$
 
-$\phi$ appears in the denominator — larger $\phi$ means fewer expected claims. When Pearson over-estimates $\phi$ by 7×, the model predicts the zero rate should be 99%+ instead of 93%. The model shrinks toward all-zero predictions because it thinks claims are so variable that they are nearly impossible to observe.
+$\phi$ appears in the denominator — larger $\phi$ means fewer expected claims. With the Pearson estimate, the zero rate jumps from 93% to 99%+.
 
-The MLE approach avoids this entirely by evaluating the correct likelihood directly — no residual-based approximations needed.
+Adding mean covariates does not fix this: the μ-GLM (22 features) yields φ=174.9 vs the intercept-only φ=174.3, with essentially identical WAIC (Δ < 1). The dispersion is well-identified from the marginal distribution alone. The problem was never the covariate specification — it was the Pearson estimator.
 
 ### Convergence Diagnostics
 
@@ -288,24 +284,11 @@ The 95% credible ellipse is well-centered on the true (MLE) values with moderate
 
 Posterior predictive checks (PPC) are a critical validation step in Bayesian workflow. Because the `Tweedie` wrapper provides the symbolic `tweedie_dist` to `pmd.CustomDist`, PyMC handles posterior predictive sampling automatically via the compiled compound graph:
 
-```python title="Posterior predictive check — using pm.sample_posterior_predictive"
+```python title="Posterior predictive check"
 with model:
     idata = pm.sample(1000)
     ppc = pm.sample_posterior_predictive(idata, random_seed=42)
-
-y_sim = ppc.posterior_predictive["y_obs"].values  # (chains, draws, n_obs)
-ppc_df = pd.DataFrame({
-    "prop_zero": np.mean(y_sim == 0, axis=-1).ravel(),
-    "total_claim": np.sum(y_sim, axis=-1).ravel(),
-    "max_claim": np.max(y_sim, axis=-1).ravel(),
-    "n_nonzero": np.sum(y_sim > 0, axis=-1).ravel(),
-})
-obs_stats = {
-    "prop_zero": np.mean(y_obs == 0),
-    "total_claim": np.sum(y_obs),
-    "max_claim": np.max(y_obs),
-    "n_nonzero": np.sum(y_obs > 0),
-}
+y_sim = ppc.posterior_predictive["y_obs"].values
 ```
 
 #### Moment Validation
@@ -379,49 +362,6 @@ This is the contrast with the competitor approach, which would smear all three p
 
 Our Bayesian model correctly recovers the 93.2% observed zero rate. The Pearson estimator predicts 99.0%. A model that predicts 99% zeros for everyone cannot differentiate between a young high-risk driver and an older low-risk one — it has nothing left to differentiate with.
 
-## Results: μ-GLM
-
-Adding covariates on the mean via a log-link GLM reveals something interesting:
-
-```python title="Tweedie GLM with covariates (pymc.dims)"
-def build_glm_model(y, X, features, p_range=(1.1, 1.9)):
-    coords = {"features": features, "obs": np.arange(len(y))}
-    with pm.Model(coords=coords) as model:
-        beta = pmd.Normal("beta", mu=0, sigma=1, dims="features")
-        mu = pmd.Deterministic("mu", pt.exp(pt.dot(X, beta)))
-
-        log_phi = pmd.Normal("log_phi", mu=0, sigma=1)
-        phi = pmd.Deterministic("phi", px.math.exp(log_phi))
-
-        p_logit = pmd.Normal("p_logit", mu=-0.5, sigma=0.5)
-        p = pmd.Deterministic("p",
-            p_range[0] + (p_range[1] - p_range[0])
-            * pmd.math.sigmoid(p_logit))
-
-        Tweedie("y_obs", mu=mu, phi=phi, p=p, observed=y, dims="obs")
-    return model
-```
-
-Dispersion remains virtually unchanged:
-
-| Model | dataCar φ |
-|-------|-----------|
-| Intercept-only | 174.3 |
-| μ-GLM (22 features) | 174.9 |
-
-Model comparison via [Watanabe–Akaike Information Criterion (WAIC)](https://www.pymc.io/projects/docs/en/v5.16.2/learn/core_notebooks/model_comparison.html) confirms that the extra covariates do not materially improve predictive fit:
-
-| Model | WAIC | ΔWAIC | pWAIC | Weight |
-|-------|------|-------|-------|--------|
-| Intercept-only | 47,825 | 0 | 3.1 | 0.62 |
-| μ-GLM | 47,824 | −1 | 25.3 | 0.38 |
-
-The two models have essentially identical WAIC (Δ < 1), and the effective number of parameters (pWAIC) jumps from 3.1 to 25.3 — the extra 22 features add complexity with no improvement. The simpler model is preferred.
-
-Why doesn't φ change? The Tweedie's variance function is $V(\mu) = \mu^p$, and the dispersion φ scales the entire variance. If the intercept-only model already identifies the correct global φ from the marginal distribution, adding mean covariates cannot reduce it — the covariates reallocate $\mu$ across policies, but the overall claim-generating process has the same variance structure. The dispersion is well-identified from the marginal distribution alone.
-
-This does not mean covariates are useless for pricing. For individual risk profiles (as in the pricing exercise above), the GLM correctly adjusts premiums by age, vehicle type, and other factors. It means that **the Tweedie's global dispersion is correctly specified as a single parameter** — and that the Pearson estimator was never the right tool to estimate it.
-
 ## An Alternative? The Saddlepoint Approximation
 
 The series expansion works, but at ~3 minutes per 60k observations it is the computational bottleneck. A natural question: is there a faster closed-form alternative?
@@ -491,25 +431,13 @@ Three practical recommendations:
 2. **Use the full likelihood** — the series expansion is numerically tractable and converges rapidly; there is no reason to settle for method-of-moments estimates
 3. **Validate with PPC** — if your model predicts 99%+ zeros when the data has 94%, the estimation method is likely the culprit, not the distribution
 
-### Are there other ways to estimate φ?
+### But Is Pearson the Only Option?
 
-Pearson is the default, not the only option. The alternatives each make a different tradeoff:
+Pearson is the default, not the only alternative. MLE via series expansion (R's `tweedie.profile()`), DGLMs with REML ([Smyth & Jørgensen, 2002](https://www.casact.org/sites/default/files/old/astin_vol32no1_143.pdf)), the EM algorithm ([Gao, 2024](https://doi.org/10.1016/j.insmatheco.2023.10.002)), and the Rosenlund estimator ([Rosenlund, 2010](https://www.casact.org/abstract/dispersion-estimates-poisson-and-tweedie-models)) all exist. The Bayesian MCMC approach ([Zhang, 2013](https://doi.org/10.1007/s11222-012-9343-7), R package `cplm`) is closest to this post's methodology but lacks PPC-based diagnosis. Every alternative requires more computation than Pearson — the post's point is that the extra computation matters, because the cost of Pearson's bias is invisible without full predictive validation.
 
-- **MLE via series expansion** (R's `tweedie.profile()` with `phi.method="mle"`) — estimates φ conditionally on a profile-searched p. Used by the post as a baseline. No posterior uncertainty, no PPC.
-- **DGLM with REML** ([Smyth & Jørgensen, 2002](https://www.casact.org/sites/default/files/old/astin_vol32no1_143.pdf)) — models φ with a second GLM. Useful when dispersion varies by risk class. Uses approximate REML, not exact likelihood.
-- **EM algorithm** ([Gao, 2024](https://doi.org/10.1016/j.insmatheco.2023.10.002)) — reformulates Tweedie as iteratively re-weighted Poisson-gamma. Avoids the saddlepoint approximation entirely — notably, the paper notes the saddlepoint "is poor when the proportion of zero claims is large."
-- **Rosenlund estimator** ([Rosenlund, 2010](https://www.casact.org/abstract/dispersion-estimates-poisson-and-tweedie-models)) — uses claim count information directly. Explicitly designed to replace Pearson for insurance data. Works well when tariff cells have enough claims, less so with sparse data.
-- **Bayesian MCMC** ([Zhang, 2013](https://doi.org/10.1007/s11222-012-9343-7), R package `cplm`) — uses the same series expansion for Bayesian inference with MH-within-Gibbs. Supports mixed models and zero-inflation. The post builds on this foundation with nutpie (modern HMC/NUTS with optimized mass matrix) and makes PPC the diagnostic that catches the Pearson failure.
+### The Balance-Sheet Stakes
 
-The common thread: every alternative requires more computation than Pearson. The post's point is that the extra computation matters — because the cost of Pearson's bias is invisible without full predictive validation.
-
-### Adverse Selection: The Balance-Sheet Stakes
-
-Because the frequentist Pearson φ overinflates dispersion, traditional GLMs yield standard errors that are too wide — they overestimate the uncertainty around predicted claim amounts. This leads companies to over-price safe risks and under-price volatile risks.
-
-The consequence is textbook adverse selection. A competitor using the stable Bayesian series model will immediately spot these mispriced segments. They will under-cut your price on the clean, profitable risks (the low-claim drivers you have over-priced), steadily stealing your best customers. Meanwhile, you are left with the under-priced, catastrophic risks — the drivers whose claim costs were systematically underestimated. Your loss ratio deteriorates from both directions simultaneously.
-
-The Bayesian model provides the mathematical vaccine: by recovering the correct φ and p jointly with full posterior uncertainty, it prices each risk at its actual expected cost rather than the smeared, inflated dispersion of the Pearson pipeline. The PPC validates that the predictive distribution matches reality — so when the model says a segment has a 2.3% chance of a \$5,000+ claim, that number is trustworthy enough to set rates on.
+Pearson's inflated standard errors lead companies to over-price safe risks and under-price volatile ones. A competitor using the correct Bayesian model will under-cut your price on the profitable low-claim risks while you absorb the catastrophic ones — adverse selection from both directions. The Bayesian model recovers the correct φ and p jointly, validates with PPC, and prices each risk at its actual expected cost.
 
 ## Related Work
 
@@ -530,41 +458,19 @@ This post fills the gap: it identifies the *mechanism* (Pearson φ inflation), d
 ## Possible Extensions
 
 - **$p > 2$ for severity modeling** — the alternating sin series handles this case, though identifiability weakens
-- **BART for the mean structure** — nonparametric mean estimation via [`pymc-bart`](https://www.pymc.io/projects/bart) for automatic interaction and nonlinearity detection
-- **Hurdle models** — separate models for claim frequency and severity for heavy-tailed data
-- **Double GLM (μ-φ DGLM)** ([Smyth & Jørgensen, 2002](https://www.casact.org/sites/default/files/old/astin_vol32no1_143.pdf)) — regressing dispersion $\phi$ on covariates captures heteroskedasticity by risk class. Combined with Bayesian partial pooling, this is the natural next step beyond the constant-dispersion model presented here.
-- **Hierarchical (partial pooling) models** — policies are nested in territories, vehicle types, and driver classes. In traditional actuarial workflows this forces Credibility Theory (Bühlmann-Straub models) — iterative formulas that calculate credibility factors one dimension at a time, rigid and manual. PyMC's dims-based partial-pooling formulation (`pm.Normal("alpha_territory", mu=0, sigma=sigma_territory, dims="territory")`) functions as **Automated, Multi-Dimensional Credibility**: it simultaneously calculates exact, mathematically sound credibility adjustments across nested, intersecting hierarchies, with all group-level variances learned from data. The same pattern extends to random slopes and nested hierarchies. Sampling many group-level parameters is computationally demanding (more dimensions for the sampler), but the model specification is concise and natural.
-- **Bayesian optimization for pricing** — the posterior over (μ, φ, p) can drive pricing decisions under uncertainty. The standard actuarial approach to risk-adjusted pricing under parameter uncertainty is nested Monte Carlo: an outer loop samples parameters, and for each set an inner loop simulates loss realizations — two layers of manual loops with no shared computation, custom and error-prone. [`pymc.vectorize_over_posterior`](https://www.pymc.io/projects/docs/en/stable/api/generated/pymc.vectorize_over_posterior.html) renders this obsolete: it takes the fitted model graph and posterior draws and returns a single vectorized function over all draws — PyTensor compiles the entire computation graph natively, with no manual looping or re-implementation. Use it to build an optimizer that evaluates pricing objectives (premium, deductible, risk retention) across the full posterior, giving a *distribution* over the optimal decision rather than a point estimate. This is the same technique behind PyMC-Marketing's MMM budget optimizer. The workflow of reusing the fitted model graph for downstream optimization was [pioneered by Ricardo Vieira in the PyMC ecosystem](https://www.youtube.com/watch?v=85jPmkMTfck).
+- **BART for the mean structure** — nonparametric mean estimation via [`pymc-bart`](https://www.pymc.io/projects/bart)
+- **Hurdle models** — separate models for claim frequency and severity
+- **Double GLM (μ-φ DGLM)** — regressing dispersion $\phi$ on covariates captures heteroskedasticity by risk class
+- **Hierarchical (partial pooling) models** — PyMC's dims-based partial-pooling replaces manual Bühlmann-Straub credibility theory with automatic, multi-dimensional credibility across nested hierarchies
+- **Bayesian optimization for pricing** — reuse the fitted model graph with [`pymc.vectorize_over_posterior`](https://www.pymc.io/projects/docs/en/stable/api/generated/pymc.vectorize_over_posterior.html) to get a full distribution over optimal pricing decisions rather than a point estimate
 
 ## Reproducibility
 
-Clone or fork the repo and run the figure scripts locally:
+All figure scripts live in `docs/blog/posts/scripts/pearson-phi-broken-tweedie/`. Each is fully self-contained — `uv` inline dependency metadata handles the environment, and synthetic data is generated internally. Run any script with:
 
 ```bash
-# Clone with gh CLI
-gh repo clone williambdean/williambdean.github.io
-cd williambdean.github.io
-
-# Or fork first, then clone your fork
-gh repo fork williambdean/williambdean.github.io --clone
-```
-
-```bash
-# Generate all figures and analysis (uv installs dependencies automatically)
 uv run docs/blog/posts/scripts/pearson-phi-broken-tweedie/fig_profile_likelihood.py
-uv run docs/blog/posts/scripts/pearson-phi-broken-tweedie/fig_prior_posterior.py
-uv run docs/blog/posts/scripts/pearson-phi-broken-tweedie/fig_ppc_validation.py
-uv run docs/blog/posts/scripts/pearson-phi-broken-tweedie/fig_zero_rate_comparison.py
-uv run docs/blog/posts/scripts/pearson-phi-broken-tweedie/fig_ppc_distribution.py
-uv run docs/blog/posts/scripts/pearson-phi-broken-tweedie/fig_pricing_profiles.py
-uv run docs/blog/posts/scripts/pearson-phi-broken-tweedie/fig_posterior_pairs.py
-uv run docs/blog/posts/scripts/pearson-phi-broken-tweedie/time_sampling.py
-uv run docs/blog/posts/scripts/pearson-phi-broken-tweedie/compute_pearson_phi.py
-uv run docs/blog/posts/scripts/pearson-phi-broken-tweedie/explore_saddlepoint.py
-uv run docs/blog/posts/scripts/pearson-phi-broken-tweedie/saddlepoint_model_fit.py
 ```
-
-Each figure script is fully self-contained using `uv` inline dependency metadata — there is no environment setup or `requirements.txt` needed. The scripts generate synthetic Tweedie data internally, so no external data files are required.
 
 ## Further Reading
 
