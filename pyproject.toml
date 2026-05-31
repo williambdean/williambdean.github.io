@@ -27,6 +27,11 @@ docs = [
 misc = [
     "pandas>=2.0.3,<3",
     "matplotlib>=3.7.2,<4",
+    "scikit-learn>=1.8.0",
+    "statsmodels>=0.14.6",
+    "arviz>=1.1.0",
+    "pymc>=6.0.0",
+    "nutpie>=0.16.10",
 ]
 
 [tool.uv]
