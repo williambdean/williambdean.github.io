@@ -62,7 +62,30 @@ The reason practitioners reach for Pearson φ is that the Tweedie density does n
 
 $$ f(y; \mu, \phi, p) = \frac{1}{y} \sum_{j=1}^{\infty} W_j $$
 
-where $W_j$ involves gamma functions and power terms. This looks intimidating, but in log-space with a modest number of terms (20 is plenty), it evaluates cleanly using [PyTensor](https://pytensor.readthedocs.io/):
+where $W_j$ involves gamma functions and power terms. Expanding with $\alpha = \frac{2-p}{p-1}$:
+
+$$
+W_j = \frac{1}{\Gamma(j+1)\,\Gamma(j\alpha)}\cdot \left(\frac{y^{\alpha}}{\phi^{1+\alpha}\,|2-p|\,(p-1)^{\alpha}}\right)^j
+$$
+
+In log-space, the density decomposes into two pieces: a core term (`ll_core`) carrying $\mu$ and a series term (`log_a`) carrying $\phi$ and $p$. The variable names in the code below map directly to these expressions:
+
+$$
+\begin{aligned}
+\text{ll_core} &= \frac{y\mu^{1-p}}{(1-p)\phi} - \frac{\mu^{2-p}}{(2-p)\phi} \\[4pt]
+\log W_j &= j\alpha\log y - j(1+\alpha)\log\phi - j\log|2-p| - j\alpha\log(p-1) \\
+&\quad - \log\Gamma(j+1) - \log\Gamma(j\alpha) \\[4pt]
+\log a &= \log\sum_{j=1}^{n} \exp(\log W_j) - \log y \\[4pt]
+\log f(y) &= \text{ll_core} + \log a
+\end{aligned}
+$$
+
+With 20 terms the series converges to machine precision for $p \in (1.1, 1.9)$:
+
+??? tip "Series Convergence"
+    The series converges rapidly for the parameter range we encounter ($p \in (1.1, 1.9)$, typical claim sizes). Even 5 terms match 200 terms to < $10^{-15}$ across all test points. The default of 20 terms gives a generous safety margin. For extreme cases near $p=1.01$ or $p=1.99$, convergence slows and more terms may be needed; in practice these edge cases are rare in insurance data.
+
+    <center>![Series convergence](../images/fig_series_convergence.png){width="480"}</center>
 
 !!! tip "Try It Yourself"
     The figure scripts in this post are inline `uv` scripts. See [Reproducibility](#reproducibility) at the bottom for details.
@@ -112,11 +135,6 @@ The key implementation choices:
 - **`maximum` for gamma function inputs**. Prevents domain errors at alpha near zero
 
 This `tweedie_logp_series` function becomes the `logp` for the `Tweedie` wrapper below. It is what MCMC uses to evaluate the likelihood of observed data at each step.
-
-??? tip "Series Convergence"
-    The series converges rapidly for the parameter range we encounter ($p \in (1.1, 1.9)$, typical claim sizes). Even 5 terms match 200 terms to < $10^{-15}$ across all test points. The default of 20 terms gives a generous safety margin. For extreme cases near $p=1.01$ or $p=1.99$, convergence slows and more terms may be needed; in practice these edge cases are rare in insurance data.
-
-    <center>![Series convergence](../images/fig_series_convergence.png){width="480"}</center>
 
 !!! info "Validation Against Reference"
     Our log-pdf matches the [`tweedie` Python reference package](https://pypi.org/project/tweedie/) to machine precision (all tested values show difference of exactly 0.000000). The implementation is verified across the full support of the distribution.
