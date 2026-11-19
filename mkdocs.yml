@@ -30,14 +30,6 @@ theme:
         icon: material/brightness-4
         name: Switch to light mode
 
-# Exclude uncommitted draft posts from local builds; remove the entry
-# when the post is committed and appears in nav
-exclude_docs: |
-  blog/posts/2026/compiled-markov-credit-risk.md
-  blog/posts/2026/customdist-why-provide-logp.md
-  blog/posts/2026/hierarchical-group-predictions.md
-  blog/posts/2026/parallel-agents-git-worktrees-uv.md
-
 plugins:
   - search
   - mkdocs-video
@@ -96,6 +88,10 @@ nav:
       - blog/index.md
       - 2026:
           - blog/posts/2026/pearson-phi-broken-tweedie.md
+          - blog/posts/2026/customdist-why-provide-logp.md
+          - blog/posts/2026/hierarchical-group-predictions.md
+          - blog/posts/2026/compiled-markov-credit-risk.md
+          - blog/posts/2026/parallel-agents-git-worktrees-uv.md
           - blog/posts/2026/ipython-startup-scripts.md
       - 2025:
           - blog/posts/2025/automate-docs-with-marimo.md
