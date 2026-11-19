@@ -145,6 +145,14 @@ This `tweedie_logp_series` function becomes the `logp` for the `Tweedie` wrapper
 
 The `tweedie_logp_series` function powers MCMC inference. For sampling (posterior predictive checks), `pmd.CustomDist` uses the symbolic `tweedie_dist` function defined in the wrapper below. It compiles the compound Poisson-Gamma graph for draws.
 
+!!! note "The `pmd.CustomDist` Contract"
+    This post follows the dims-aware `pmd.CustomDist` API merged into PyMC ([PR #8346](https://github.com/pymc-devs/pymc/pull/8346)), shipping in the next release. Two contract points when writing your own `dist` function:
+
+    1. **`extra_dims` argument**. The `dist` function receives a dict mapping the requested dims that no parameter implies to their lengths, the counterpart of the `size` argument of `pm.CustomDist`. The function must attach those dims itself (here, `Poisson.dist(mu=lam, dim_lengths=extra_dims)`); downstream operations inherit them from its output.
+    2. **`observed` as an xtensor**. Observed data must carry its dims, via `pmd.as_xtensor(y, dims=("obs",))`. The `dims=` kwarg only validates and orders the RV output dims.
+
+    A `logp` function receives the value and params as `XTensorVariable` and may return one, so `pytensor.xtensor` operations can be used throughout.
+
 !!! note "Exposure Weights in Practice"
     Insurance applications use exposure weights via $\phi_i = \phi / w_i$. A policy with half-year exposure should contribute less variance than a full-year one. The unweighted functions here assume uniform exposure. See the full weighted implementation in the repo.
 
@@ -158,16 +166,19 @@ import pymc.dims as pmd
 import pytensor.xtensor as px
 
 
-def tweedie_dist(mu, phi, p):
+def tweedie_dist(mu, phi, p, extra_dims):
     """Tweedie random draws via Poisson-Gamma compound (p ∈ (1, 2)).
 
     Symbolic dist function for pmd.CustomDist: receives XTensorVariable
-    params and returns a compound expression used for automatic sampling.
+    params plus extra_dims, a dict mapping the requested dims that are
+    not implied by any param to their lengths (the counterpart of the
+    size argument of pm.CustomDist). The function must attach those
+    dims itself and return an XTensorVariable.
     """
     lam = mu ** (2 - p) / (phi * (2 - p))
     alpha_term = (2 - p) / (p - 1)
     beta = 1.0 / (phi * (p - 1) * mu ** (p - 1))
-    N = pmd.Poisson.dist(mu=lam)
+    N = pmd.Poisson.dist(mu=lam, dim_lengths=extra_dims)
     Y = pmd.Gamma.dist(alpha=px.math.maximum(N * alpha_term, 1e-10), beta=beta)
     return px.math.where(N > 0, Y, 0.0)
 ```
@@ -202,7 +213,11 @@ def build_intercept_only_model(y, p_range=(1.1, 1.9)):
             p_range[0] + (p_range[1] - p_range[0])
             * pmd.math.sigmoid(p_logit))
 
-        Tweedie("y_obs", mu=mu, phi=phi, p=p, observed=y, dims="obs")
+        Tweedie(
+            "y_obs", mu=mu, phi=phi, p=p,
+            observed=pmd.as_xtensor(y, dims=("obs",)),
+            dims="obs",
+        )
     return model
 ```
 
@@ -436,8 +451,6 @@ No loops, no series, no scans. Just arithmetic and natively differentiable by Py
 ```python title="Tweedie log-pdf via saddlepoint approximation"
 def tweedie_logp_saddlepoint(value, mu, phi, p):
     """Tweedie log-pdf via saddlepoint (Nelder & Pregibon)."""
-    value = as_xtensor(value, dims=("obs",))
-    mu, phi, p = pt.squeeze(mu), pt.squeeze(phi), pt.squeeze(p)
     y_safe = px.math.maximum(value, 1e-10)
 
     term1 = y_safe ** (2 - p) / ((1 - p) * (2 - p))
@@ -446,14 +459,12 @@ def tweedie_logp_saddlepoint(value, mu, phi, p):
     deviance = 2 * (term1 - term2 + term3)
 
     logl_pos = (
-        -0.5 * px.math.log(2 * pt.constant(np.pi) * phi * (y_safe ** p))
+        -0.5 * px.math.log(2 * np.pi * phi * (y_safe ** p))
         - deviance / (2 * phi)
     )
     logl_zero = -(mu ** (2 - p)) / (phi * (2 - p))
 
-    return pmd.tensor_from_xtensor(
-        px.math.where(value <= 1e-9, logl_zero, logl_pos)
-    )
+    return px.math.where(value <= 1e-9, logl_zero, logl_pos)
 ```
 
 This is a drop-in for `tweedie_logp_series` in the `Tweedie` wrapper: same signature, same zero-handling, just a different path through the log-probability.
