@@ -765,6 +765,15 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#the-dims-aware-customdist-in-pymcdims" class="md-nav__link">
+    <span class="md-ellipsis">
+      The dims-aware CustomDist in pymc.dims
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1471,6 +1480,15 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#the-dims-aware-customdist-in-pymcdims" class="md-nav__link">
+    <span class="md-ellipsis">
+      The dims-aware CustomDist in pymc.dims
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1598,7 +1616,15 @@
 <li>A <code>__new__</code> method that wires both into <code>CustomDist</code></li>
 <li>A <code>dist</code> classmethod for standalone use outside a model</li>
 </ol>
-<p>Chi and Maxwell show automatic logp works for simple differentiable transforms. Skellam and BetaNegativeBinomial show convolutions, compounds, and distributions without closed forms need an explicit <code>logp</code>. Both approaches live in the same package.</p></div>
+<p>Chi and Maxwell show automatic logp works for simple differentiable transforms. Skellam and BetaNegativeBinomial show convolutions, compounds, and distributions without closed forms need an explicit <code>logp</code>. Both approaches live in the same package.</p>
+<h2 id="the-dims-aware-customdist-in-pymcdims">The dims-aware CustomDist in pymc.dims</h2>
+<p>PyMC now also ships a dims-aware <code>CustomDist</code> in <code>pymc.dims</code>, the xtensor-native API for models with named dimensions (<a href="https://github.com/pymc-devs/pymc/pull/8346">PR #8346</a>, merged into main and shipping in the next release). It follows the same <code>dist</code> + <code>logp</code> pattern with a different contract:</p>
+<ul>
+<li>The <code>dist</code> function receives the parameters as <code>XTensorVariable</code>, plus an <code>extra_dims</code> dict as its last argument: the dims requested via <code>dims=</code>/<code>observed=</code> that no parameter implies, the counterpart of the <code>size</code> argument of <code>pm.CustomDist</code>. The function must attach those dims itself (for example <code>pmd.Poisson.dist(mu=lam, dim_lengths=extra_dims)</code>) and return an <code>XTensorVariable</code></li>
+<li><code>observed</code> data must carry its dims, via <code>pmd.as_xtensor(y, dims=("obs",))</code></li>
+<li>A user-provided <code>logp</code> receives the value and parameters as <code>XTensorVariable</code> and may return one, so <code>pytensor.xtensor</code> operations work throughout</li>
+</ul>
+<p>The <a href="https://williambdean.github.io/blog/posts/2026/pearson-phi-broken-tweedie/">Tweedie post</a> is a worked example: a compound Poisson-Gamma <code>dist</code> for sampling, the Dunn &amp; Smyth series as <code>logp</code> for inference, built on this API.</p></div>
 
 
 
@@ -1621,7 +1647,7 @@
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 19, 2026 20:46:43">November 19, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 19, 2026 20:50:35">November 19, 2026</span>
   </span>
 
     
