@@ -10,6 +10,9 @@ comments: true
 
 # Parallel AI Agents with Git Worktrees and uv
 
+!!! tip "TL;DR"
+    We migrated [pymc-marketing](https://github.com/pymc-labs/pymc-marketing) from conda to uv for faster dependency resolution and simpler CI: pymc 6.0 ships on PyPI, so conda-forge is no longer needed. The unexpected benefit: uv's `--directory` flag pairs naturally with git worktrees. Each parallel AI coding agent gets its own branch, checkout, and committed `uv.lock`, invoked from anywhere with no `cd` and no shared named environments.
+
 Recently we migrated [pymc-marketing](https://github.com/pymc-labs/pymc-marketing) from
 conda to uv. The reasons were straightforward: faster dependency resolution and
 simpler CI. The key enabler: **[pymc 6.0.0](https://github.com/pymc-devs/pymc/releases/tag/v6.0.0) now ships on PyPI**, eliminating the
@@ -71,11 +74,6 @@ worktrees/fix-builder-pr
 worktrees/add-analytics-endpoint
 worktrees/upgrade-deps
 ```
-
-For navigating between them I use [Worktrunk](https://github.com/max-sixty/worktrunk),
-specifically `wt switch` to move around without typing branch names and paths
-repeatedly. I'm still exploring the tool and don't use its full merge/remove
-workflow yet, but the switching alone is worth it.
 
 The pattern that emerged is simple:
 
