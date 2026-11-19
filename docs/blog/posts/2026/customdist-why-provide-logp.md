@@ -119,3 +119,13 @@ Every distribution in pymc-extras that needs an explicit logp uses the same stru
 4. A `dist` classmethod for standalone use outside a model
 
 Chi and Maxwell show automatic logp works for simple differentiable transforms. Skellam and BetaNegativeBinomial show convolutions, compounds, and distributions without closed forms need an explicit `logp`. Both approaches live in the same package.
+
+## The dims-aware CustomDist in pymc.dims
+
+PyMC now also ships a dims-aware `CustomDist` in `pymc.dims`, the xtensor-native API for models with named dimensions ([PR #8346](https://github.com/pymc-devs/pymc/pull/8346), merged into main and shipping in the next release). It follows the same `dist` + `logp` pattern with a different contract:
+
+- The `dist` function receives the parameters as `XTensorVariable`, plus an `extra_dims` dict as its last argument: the dims requested via `dims=`/`observed=` that no parameter implies, the counterpart of the `size` argument of `pm.CustomDist`. The function must attach those dims itself (for example `pmd.Poisson.dist(mu=lam, dim_lengths=extra_dims)`) and return an `XTensorVariable`
+- `observed` data must carry its dims, via `pmd.as_xtensor(y, dims=("obs",))`
+- A user-provided `logp` receives the value and parameters as `XTensorVariable` and may return one, so `pytensor.xtensor` operations work throughout
+
+The [Tweedie post](https://williambdean.github.io/blog/posts/2026/pearson-phi-broken-tweedie/) is a worked example: a compound Poisson-Gamma `dist` for sampling, the Dunn & Smyth series as `logp` for inference, built on this API.
