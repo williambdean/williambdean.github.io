@@ -1,0 +1,2983 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Python's credit risk ecosystem covers scoring but not migration. Here's how to build a compiled Markov model for credit risk using PyTensor and PyMC, with auto-discovered sensitivity parameters.">
+      
+      
+      
+        <link rel="canonical" href="https://williambdean.github.io/blog/posts/2026/compiled-markov-credit-risk/">
+      
+      
+        <link rel="prev" href="../hierarchical-group-predictions/">
+      
+      
+        <link rel="next" href="../parallel-agents-git-worktrees-uv/">
+      
+      
+        <link rel="alternate" type="application/rss+xml" title="RSS feed" href="../../../../feed_rss_created.xml">
+        <link rel="alternate" type="application/rss+xml" title="RSS feed of updated content" href="../../../../feed_rss_updated.xml">
+      
+      <link rel="icon" href="../../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.23">
+    
+    
+      
+        <title>Compiled Markov Chains for Credit Risk in Python - Will Dean</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../../assets/stylesheets/main.84d31ad4.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+  
+
+
+  
+  
+
+<script id="__analytics">function __md_analytics(){function e(){dataLayer.push(arguments)}window.dataLayer=window.dataLayer||[],e("js",new Date),e("config","G-R1GGWK6LCW"),document.addEventListener("DOMContentLoaded",(function(){document.forms.search&&document.forms.search.query.addEventListener("blur",(function(){this.value&&e("event","search",{search_term:this.value})}));document$.subscribe((function(){var t=document.forms.feedback;if(void 0!==t)for(var a of t.querySelectorAll("[type=submit]"))a.addEventListener("click",(function(a){a.preventDefault();var n=document.location.pathname,d=this.getAttribute("data-md-value");e("event","feedback",{page:n,data:d}),t.firstElementChild.disabled=!0;var r=t.querySelector(".md-feedback__note [data-md-value='"+d+"']");r&&(r.hidden=!1)})),t.hidden=!1})),location$.subscribe((function(t){e("config","G-R1GGWK6LCW",{page_path:t.pathname})}))}));var t=document.createElement("script");t.async=!0,t.src="https://www.googletagmanager.com/gtag/js?id=G-R1GGWK6LCW",document.getElementById("__analytics").insertAdjacentElement("afterEnd",t)}</script>
+  
+    <script>"undefined"!=typeof __md_analytics&&__md_analytics()</script>
+  
+
+    
+    
+      
+        <meta  property="og:type"  content="website" >
+      
+        <meta  property="og:title"  content="Compiled Markov Chains for Credit Risk in Python - Will Dean" >
+      
+        <meta  property="og:description"  content="Python's credit risk ecosystem covers scoring but not migration. Here's how to build a compiled Markov model for credit risk using PyTensor and PyMC, with auto-discovered sensitivity parameters." >
+      
+        <meta  property="og:image"  content="https://williambdean.github.io/assets/images/social/blog/posts/2026/compiled-markov-credit-risk.png" >
+      
+        <meta  property="og:image:type"  content="image/png" >
+      
+        <meta  property="og:image:width"  content="1200" >
+      
+        <meta  property="og:image:height"  content="630" >
+      
+        <meta  property="og:url"  content="https://williambdean.github.io/blog/posts/2026/compiled-markov-credit-risk/" >
+      
+        <meta  name="twitter:card"  content="summary_large_image" >
+      
+        <meta  name="twitter:title"  content="Compiled Markov Chains for Credit Risk in Python - Will Dean" >
+      
+        <meta  name="twitter:description"  content="Python's credit risk ecosystem covers scoring but not migration. Here's how to build a compiled Markov model for credit risk using PyTensor and PyMC, with auto-discovered sensitivity parameters." >
+      
+        <meta  name="twitter:image"  content="https://williambdean.github.io/assets/images/social/blog/posts/2026/compiled-markov-credit-risk.png" >
+      
+    
+    
+  <meta name="google-site-verification" content="8viHBc_t5bEEtPJfuu29pd_den6Xa6tD4G9ZdCLOwl4">
+  
+    
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      "headline": "Compiled Markov Chains for Credit Risk in Python",
+      "description": "Python\u0027s credit risk ecosystem covers scoring but not migration. Here\u0027s how to build a compiled Markov model for credit risk using PyTensor and PyMC, with auto-discovered sensitivity parameters.",
+      "url": "https://williambdean.github.io/blog/posts/2026/compiled-markov-credit-risk/",
+      
+      "datePublished": "2026-11-19",
+      
+      
+      "dateModified": "2026-11-19",
+      
+      "author": {
+        "@type": "Person",
+        "name": "Will Dean",
+        "url": "https://williambdean.github.io/"
+      }
+    }
+    </script>
+  
+  
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Will Dean",
+        "item": "https://williambdean.github.io/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Blog",
+        "item": "https://williambdean.github.io/blog/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "Compiled Markov Chains for Credit Risk in Python"
+      }
+    ]
+  }
+  </script>
+  
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    "name": "Will Dean",
+    "url": "https://williambdean.github.io/",
+    "sameAs": [
+      "https://github.com/williambdean",
+      "https://www.linkedin.com/in/williambdean/"
+    ]
+  }
+  </script>
+  
+
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#compiled-markov-chains-for-credit-risk-in-python" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../../.." title="Will Dean" class="md-header__button md-logo" aria-label="Will Dean" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Will Dean
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Compiled Markov Chains for Credit Risk in Python
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/williambdean/williambdean.github.io" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    williambdean.github.io
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Welcome
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../../appearances/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Appearances
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../../../" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Blog
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../../open-source/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Open Source
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../../.." title="Will Dean" class="md-nav__button md-logo" aria-label="Will Dean" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Will Dean
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/williambdean/williambdean.github.io" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    williambdean.github.io
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Welcome
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../appearances/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Appearances
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    Blog
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3" id="__nav_3_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Blog
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3_2" id="__nav_3_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    2026
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3_2">
+            <span class="md-nav__icon md-icon"></span>
+            2026
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../pearson-phi-broken-tweedie/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Why Pearson φ Fails for Tweedie Pure Premiums (and How Bayesian PPC Fixes It)
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../customdist-why-provide-logp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    CustomDist: Why Provide a logp?
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../hierarchical-group-predictions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Predicting for New Groups in Hierarchical Models
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Compiled Markov Chains for Credit Risk in Python
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    Compiled Markov Chains for Credit Risk in Python
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-problem" class="md-nav__link">
+    <span class="md-ellipsis">
+      The Problem
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#why-static-graphs-work" class="md-nav__link">
+    <span class="md-ellipsis">
+      Why Static Graphs Work
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#why-pymc-pytensor" class="md-nav__link">
+    <span class="md-ellipsis">
+      Why PyMC + PyTensor
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Why PyMC + PyTensor">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#distributions-are-tensors" class="md-nav__link">
+    <span class="md-ellipsis">
+      Distributions Are Tensors
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pmcompile-creates-seeded-random-functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      pm.compile Creates Seeded Random Functions
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-optimizer-sees-the-whole-graph" class="md-nav__link">
+    <span class="md-ellipsis">
+      The Optimizer Sees the Whole Graph
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-three-patterns" class="md-nav__link">
+    <span class="md-ellipsis">
+      The Three Patterns
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The Three Patterns">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pattern-1-pmcompile-for-compiled-functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      Pattern 1: pm.compile for compiled functions
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pattern-2-ptscalar-for-sweepable-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      Pattern 2: pt.scalar for sweepable parameters
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pattern-3-explicit_graph_inputs-for-auto-discovery" class="md-nav__link">
+    <span class="md-ellipsis">
+      Pattern 3: explicit_graph_inputs for auto-discovery
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#introspecting-the-graph" class="md-nav__link">
+    <span class="md-ellipsis">
+      Introspecting the Graph
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Introspecting the Graph">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#checking-for-random-variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      Checking for Random Variables
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#searching-the-graph-by-name" class="md-nav__link">
+    <span class="md-ellipsis">
+      Searching the Graph by Name
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#summary-three-functions-for-graph-introspection" class="md-nav__link">
+    <span class="md-ellipsis">
+      Summary: Three Functions for Graph Introspection
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#building-a-credit-migration-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      Building a Credit Migration Model
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Building a Credit Migration Model">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      The Setup
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-transition-matrix" class="md-nav__link">
+    <span class="md-ellipsis">
+      The Transition Matrix
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-markov-trace" class="md-nav__link">
+    <span class="md-ellipsis">
+      The Markov Trace
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a-time-varying-transition-tensor" class="md-nav__link">
+    <span class="md-ellipsis">
+      A Time-Varying Transition Tensor
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#seeing-the-uncertainty" class="md-nav__link">
+    <span class="md-ellipsis">
+      Seeing the Uncertainty
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-cost-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      The Cost Model
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#compile-and-run" class="md-nav__link">
+    <span class="md-ellipsis">
+      Compile and Run
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sensitivity-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      Sensitivity Analysis
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Sensitivity Analysis">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-problem_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      The Problem
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-solution" class="md-nav__link">
+    <span class="md-ellipsis">
+      The Solution
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#why-this-matters" class="md-nav__link">
+    <span class="md-ellipsis">
+      Why This Matters
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Why This Matters">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-paradigm-not-just-speed" class="md-nav__link">
+    <span class="md-ellipsis">
+      The Paradigm, Not Just Speed
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-flexibility" class="md-nav__link">
+    <span class="md-ellipsis">
+      The Flexibility
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      The Integration
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reproducibility" class="md-nav__link">
+    <span class="md-ellipsis">
+      Reproducibility
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#whats-missing" class="md-nav__link">
+    <span class="md-ellipsis">
+      What's Missing
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#whats-next" class="md-nav__link">
+    <span class="md-ellipsis">
+      What's Next
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../parallel-agents-git-worktrees-uv/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Parallel AI Agents with Git Worktrees and uv
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ipython-startup-scripts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Project-Level IPython Startup Scripts
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_3" id="__nav_3_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    2025
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_3">
+            <span class="md-nav__icon md-icon"></span>
+            2025
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../2025/automate-docs-with-marimo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Automate marimo Notebook Documentation
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../2025/pytest-debugging/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Debugging with pytest
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_4" id="__nav_3_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    2024
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_4">
+            <span class="md-nav__icon md-icon"></span>
+            2024
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../2024/pymc-marketing-strategy-pattern/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Strategy Pattern for Flexible Solutions
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_5" id="__nav_3_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    2023
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_5">
+            <span class="md-nav__icon md-icon"></span>
+            2023
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../2023/docker-container/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Working within Docker container
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../2023/iteration-pattern/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Iteration Pattern
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../2023/extending-pandas/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Extending Pandas
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../2023/conjugate-priors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Conjugate Priors
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_6" id="__nav_3_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    2022
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_6">
+            <span class="md-nav__icon md-icon"></span>
+            2022
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../2022/pathlib/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    My Favorite Python builtin: pathlib
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../2022/pydantic-configs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Pydantic for Configs
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../2022/site-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    MkDocs and GitHub Pages
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../open-source/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Open Source
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-problem" class="md-nav__link">
+    <span class="md-ellipsis">
+      The Problem
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#why-static-graphs-work" class="md-nav__link">
+    <span class="md-ellipsis">
+      Why Static Graphs Work
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#why-pymc-pytensor" class="md-nav__link">
+    <span class="md-ellipsis">
+      Why PyMC + PyTensor
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Why PyMC + PyTensor">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#distributions-are-tensors" class="md-nav__link">
+    <span class="md-ellipsis">
+      Distributions Are Tensors
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pmcompile-creates-seeded-random-functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      pm.compile Creates Seeded Random Functions
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-optimizer-sees-the-whole-graph" class="md-nav__link">
+    <span class="md-ellipsis">
+      The Optimizer Sees the Whole Graph
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-three-patterns" class="md-nav__link">
+    <span class="md-ellipsis">
+      The Three Patterns
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The Three Patterns">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pattern-1-pmcompile-for-compiled-functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      Pattern 1: pm.compile for compiled functions
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pattern-2-ptscalar-for-sweepable-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      Pattern 2: pt.scalar for sweepable parameters
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pattern-3-explicit_graph_inputs-for-auto-discovery" class="md-nav__link">
+    <span class="md-ellipsis">
+      Pattern 3: explicit_graph_inputs for auto-discovery
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#introspecting-the-graph" class="md-nav__link">
+    <span class="md-ellipsis">
+      Introspecting the Graph
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Introspecting the Graph">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#checking-for-random-variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      Checking for Random Variables
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#searching-the-graph-by-name" class="md-nav__link">
+    <span class="md-ellipsis">
+      Searching the Graph by Name
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#summary-three-functions-for-graph-introspection" class="md-nav__link">
+    <span class="md-ellipsis">
+      Summary: Three Functions for Graph Introspection
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#building-a-credit-migration-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      Building a Credit Migration Model
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Building a Credit Migration Model">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      The Setup
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-transition-matrix" class="md-nav__link">
+    <span class="md-ellipsis">
+      The Transition Matrix
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-markov-trace" class="md-nav__link">
+    <span class="md-ellipsis">
+      The Markov Trace
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a-time-varying-transition-tensor" class="md-nav__link">
+    <span class="md-ellipsis">
+      A Time-Varying Transition Tensor
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#seeing-the-uncertainty" class="md-nav__link">
+    <span class="md-ellipsis">
+      Seeing the Uncertainty
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-cost-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      The Cost Model
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#compile-and-run" class="md-nav__link">
+    <span class="md-ellipsis">
+      Compile and Run
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sensitivity-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      Sensitivity Analysis
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Sensitivity Analysis">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-problem_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      The Problem
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-solution" class="md-nav__link">
+    <span class="md-ellipsis">
+      The Solution
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#why-this-matters" class="md-nav__link">
+    <span class="md-ellipsis">
+      Why This Matters
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Why This Matters">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-paradigm-not-just-speed" class="md-nav__link">
+    <span class="md-ellipsis">
+      The Paradigm, Not Just Speed
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-flexibility" class="md-nav__link">
+    <span class="md-ellipsis">
+      The Flexibility
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      The Integration
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reproducibility" class="md-nav__link">
+    <span class="md-ellipsis">
+      Reproducibility
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#whats-missing" class="md-nav__link">
+    <span class="md-ellipsis">
+      What's Missing
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#whats-next" class="md-nav__link">
+    <span class="md-ellipsis">
+      What's Next
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  <nav class="md-tags" >
+    
+      
+      
+      
+        <a href="../../../#tag:credit-risk" class="md-tag">Credit Risk</a>
+      
+    
+      
+      
+      
+        <a href="../../../#tag:finance" class="md-tag">Finance</a>
+      
+    
+      
+      
+      
+        <a href="../../../#tag:pymc" class="md-tag">PyMC</a>
+      
+    
+      
+      
+      
+        <a href="../../../#tag:pytensor" class="md-tag">PyTensor</a>
+      
+    
+  </nav>
+
+
+  
+  
+
+
+<div><h1 id="compiled-markov-chains-for-credit-risk-in-python">Compiled Markov Chains for Credit Risk in Python</h1>
+<div class="admonition tip">
+<p class="admonition-title">TL;DR</p>
+<p>Python has hundreds of credit risk repositories. Almost all do credit scoring (ML). Almost none do credit migration (Markov chains + simulation + sensitivity). Here's how to build a compiled credit migration model using PyTensor and PyMC, with auto-discovered sensitivity parameters that sweep without recompilation, and where any tensor that broadcasts (a per-year stress profile, a macro overlay) composes into the same compiled function.</p>
+</div>
+<h2 id="the-problem">The Problem</h2>
+<p>When a bank holds $100M in corporate bonds, it needs to answer a hard question: "What happens to our portfolio if the economy worsens over the next 5 years?"</p>
+<p>The standard approach is <strong>credit migration</strong>: tracking how borrowers move between rating categories over time. In normal economic conditions, nearly 10% of a corporate bond portfolio defaults within 5 years. That's $10M in losses, and that's <em>before</em> a recession hits.</p>
+<p>Python has <a href="https://github.com/topics/credit-risk?l=python">hundreds of credit risk repositories</a>, but almost all do <strong>credit scoring</strong>: predicting whether an individual borrower will default. Credit <em>migration</em> is a different problem: simulating how an entire portfolio evolves over time, with parameter uncertainty and sensitivity analysis.</p>
+<p>The one Python tool that handles transition matrices, <a href="https://github.com/open-risk/transitionMatrix">transitionMatrix</a> (87★), does estimation and visualization but not simulation or sensitivity analysis.</p>
+<p>Here's how to build what's missing.</p>
+<h2 id="why-static-graphs-work">Why Static Graphs Work</h2>
+<p>The key insight: everything in a risk model is a tensor. Transition matrices, cohort vectors, recovery rates, costs. If everything is a tensor, you can compose it into a single computation graph. And if you have a computation graph, you can compile, optimize, and introspect it.</p>
+<p>Here is a five-year Markov scan, and what the compiler does with it:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">pytensor</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">import</span><span class="w"> </span><span class="nn">pytensor.tensor</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pt</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">x</span> <span class="o">=</span> <span class="n">pt</span><span class="o">.</span><span class="n">vector</span><span class="p">(</span><span class="s2">"x"</span><span class="p">)</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="n">T</span> <span class="o">=</span> <span class="n">pt</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="s2">"T"</span><span class="p">)</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="k">def</span><span class="w"> </span><span class="nf">step</span><span class="p">(</span><span class="n">x_t</span><span class="p">,</span> <span class="n">T</span><span class="p">):</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="k">return</span> <span class="n">x_t</span> <span class="o">@</span> <span class="n">T</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="n">trace</span> <span class="o">=</span> <span class="n">pytensor</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>    <span class="n">fn</span><span class="o">=</span><span class="n">step</span><span class="p">,</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>    <span class="n">outputs_info</span><span class="o">=</span><span class="p">[</span><span class="n">x</span><span class="p">],</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>    <span class="n">non_sequences</span><span class="o">=</span><span class="p">[</span><span class="n">T</span><span class="p">],</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>    <span class="n">n_steps</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>    <span class="n">return_updates</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="p">)</span>
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="n">fn</span> <span class="o">=</span> <span class="n">pytensor</span><span class="o">.</span><span class="n">function</span><span class="p">([</span><span class="n">x</span><span class="p">,</span> <span class="n">T</span><span class="p">],</span> <span class="n">trace</span><span class="p">)</span>
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="n">fn</span><span class="o">.</span><span class="n">dprint</span><span class="p">()</span>
+</code></pre></div>
+<div class="highlight"><span class="filename">Compiled graph (from dprint)</span><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>Subtensor{start:} [id A] 6
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a> ├─ Scan{scan_fn, while_loop=False, inplace=all} [id B] 5
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a> │  ├─ 5 [id C]
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a> │  ├─ SetSubtensor{:stop} [id D] 4
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a> │  │  ├─ AllocEmpty{dtype='float64'} [id E] 3
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a> │  │  │  ├─ 6 [id F]
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a> │  │  │  └─ Shape_i{0} [id G] 2
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a> │  │  │     └─ x [id H]
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a> │  │  ├─ ExpandDims{axis=0} [id I] 1
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a> │  │  │  └─ x [id H]
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a> │  │  └─ 1 [id J]
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a> │  └─ MatrixTranspose [id K] 0
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a> │     └─ T [id L]
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a> └─ 1 [id J]
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>Inner graphs:
+<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>
+<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a>Scan{scan_fn, while_loop=False, inplace=all} [id B]
+<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a> ← Squeeze{axis=1} [id M]
+<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>    └─ Dot [id N]
+<a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a>       ├─ i1 [id O] -&gt; [id K]
+<a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a>       └─ ExpandDims{axis=1} [id P]
+<a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a>          └─ i0 [id Q] -&gt; [id D]
+</code></pre></div>
+<p>The inner graph is a single <code>Dot</code>: expand the cohort vector to a column, multiply by the transposed matrix, squeeze back. Five interpreted steps become one BLAS call, about 0.006 ms per call for a 7×7 matrix. When the scan also contains embedded distributions that carry random state, <code>pm.compile</code> manages their seeds automatically. That's the next section.</p>
+<h2 id="why-pymc-pytensor">Why PyMC + PyTensor</h2>
+<h3 id="distributions-are-tensors">Distributions Are Tensors</h3>
+<p><a href="https://www.pymc.io/projects/docs/en/latest/api/distributions.html">PyMC distributions</a> are methods that return <code>TensorVariable</code> instances: tensors you can compose with other operations in the computation graph.</p>
+<div class="highlight"><span class="filename">PyMC distributions are tensors</span><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># This is a tensor, not a number</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">recovery</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">Beta</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">mu</span><span class="o">=</span><span class="mf">0.45</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">0.15</span><span class="p">)</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># You can compose it with other tensors</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="n">loss_given_default</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">recovery</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="n">expected_loss</span> <span class="o">=</span> <span class="n">exposure</span> <span class="o">*</span> <span class="n">default_prob</span> <span class="o">*</span> <span class="n">loss_given_default</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="c1"># The entire expression is a tensor graph</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="c1"># Nothing has been computed yet</span>
+</code></pre></div>
+<p>With numpy, <code>np.random.beta(123, 101)</code> returns a number immediately. There is no graph, no composition, no compilation.</p>
+<h3 id="pmcompile-creates-seeded-random-functions">pm.compile Creates Seeded Random Functions</h3>
+<p><a href="https://www.pymc.io/projects/docs/en/latest/api/generated/pymc.pytensorf.compile.html"><code>pm.compile</code></a> is not just <code>pytensor.function</code>; it automatically manages random seeds across all embedded <code>pm.*.dist</code> nodes:</p>
+<div class="highlight"><span class="filename">pm.compile handles random seeds</span><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">pymc</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pm</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="c1"># Distributions embedded in the graph</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="n">cost</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">Gamma</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">mu</span><span class="o">=</span><span class="mi">410</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="n">recovery</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">Beta</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">mu</span><span class="o">=</span><span class="mf">0.45</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">0.15</span><span class="p">)</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="c1"># pm.compile creates a function that manages random state</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="n">fn</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">compile</span><span class="p">([],</span> <span class="p">[</span><span class="n">cost</span><span class="p">,</span> <span class="n">recovery</span><span class="p">])</span>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="c1"># Each call executes the entire graph, drawing fresh random values</span>
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="c1"># from every embedded distribution:</span>
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="n">result1</span> <span class="o">=</span> <span class="n">fn</span><span class="p">()</span>  <span class="c1"># draws new Gamma and Beta samples internally</span>
+<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="n">result2</span> <span class="o">=</span> <span class="n">fn</span><span class="p">()</span>  <span class="c1"># draws NEW, independent samples (not the same as call 1)</span>
+<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Draw 1: cost=</span><span class="si">{</span><span class="n">result1</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">, recovery=</span><span class="si">{</span><span class="n">result1</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Draw 2: cost=</span><span class="si">{</span><span class="n">result2</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">, recovery=</span><span class="si">{</span><span class="n">result2</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><span class="filename">Output</span><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>Draw 1: cost=539, recovery=0.493
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>Draw 2: cost=283, recovery=0.746
+</code></pre></div>
+<p>The random state is managed inside the compiled function. No external RNG object, no manual seed passing. Each call is independent.</p>
+<p>With numpy, you would manage random state by hand:</p>
+<div class="highlight"><span class="filename">numpy requires manual seed management</span><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>  <span class="c1"># create RNG</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10000</span><span class="p">):</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>    <span class="n">cost</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">gamma</span><span class="p">(</span><span class="mi">410</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>  <span class="c1"># pass rng to each call</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>    <span class="n">recovery</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">beta</span><span class="p">(</span><span class="mi">123</span><span class="p">,</span> <span class="mi">101</span><span class="p">)</span>
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>    <span class="c1"># ... compute loss ...</span>
+</code></pre></div>
+<p><code>pm.compile</code> eliminates this. The compiled function knows about all random nodes in the graph and updates their seeds automatically.</p>
+<h3 id="the-optimizer-sees-the-whole-graph">The Optimizer Sees the Whole Graph</h3>
+<p>PyTensor's CVM optimizer inspects the entire computation before running a single operation. It eliminates redundant work, fuses matrix multiplies into BLAS calls, and picks memory layouts that eager execution cannot know about. That's what turned the scan above into a single <code>Dot</code>.</p>
+<h2 id="the-three-patterns">The Three Patterns</h2>
+<h3 id="pattern-1-pmcompile-for-compiled-functions">Pattern 1: pm.compile for compiled functions</h3>
+<div class="highlight"><span class="filename">pm.compile with embedded distributions</span><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1"># Distributions embedded in the model</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="n">recovery</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">Beta</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">mu</span><span class="o">=</span><span class="mf">0.45</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">0.15</span><span class="p">)</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="c1"># ... compose into the loss expression ...</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="n">total_loss</span> <span class="o">=</span> <span class="n">defaulted_exposure</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">recovery</span><span class="p">)</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="c1"># Compile: creates a function that handles all random nodes</span>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="n">fn</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">compile</span><span class="p">([],</span> <span class="n">total_loss</span><span class="p">)</span>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="c1"># Each call = one Monte Carlo iteration</span>
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="n">results</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">fn</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10_000</span><span class="p">)])</span>
+</code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">To loop or not to loop?</p>
+<p>For simple models without <code>pytensor.scan</code>, you can vectorize by passing <code>shape</code> to each distribution, no loop needed:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="c1"># Vectorized: 10,000 draws in one call</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="n">cost</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">Gamma</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">mu</span><span class="o">=</span><span class="mi">35_000</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mi">10_000</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="mi">10_000</span><span class="p">)</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="n">recovery</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">Beta</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">mu</span><span class="o">=</span><span class="mf">0.45</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">0.15</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="mi">10_000</span><span class="p">)</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="n">fn</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">compile</span><span class="p">([],</span> <span class="n">cost</span> <span class="o">*</span> <span class="n">recovery</span><span class="p">)</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="n">results</span> <span class="o">=</span> <span class="n">fn</span><span class="p">()</span>  <span class="c1"># returns array of 10,000 values</span>
+</code></pre></div>
+<p>But when the model contains <code>pytensor.scan</code> (like a Markov chain), vectorizing the scan itself is harder. The compiled function handles the scan internally, so you loop over the function instead. The full model below measures ~0.04 ms per call, so 10,000 iterations take under half a second.</p>
+</div>
+<h3 id="pattern-2-ptscalar-for-sweepable-parameters">Pattern 2: pt.scalar for sweepable parameters</h3>
+<p>Name a parameter. It becomes an input to the compiled function:</p>
+<div class="highlight"><span class="filename">pt.scalar for sweepable parameters</span><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">lgd_multiplier</span> <span class="o">=</span> <span class="n">pt</span><span class="o">.</span><span class="n">scalar</span><span class="p">(</span><span class="s2">"lgd_multiplier"</span><span class="p">)</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="c1"># Scale the loss given default (LGD): 0.6x benign, 1.2x harsh</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="n">lgd</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">recovery</span><span class="p">)</span> <span class="o">*</span> <span class="n">lgd_multiplier</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="n">fn</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">compile</span><span class="p">([</span><span class="n">lgd_multiplier</span><span class="p">],</span> <span class="n">total_loss</span><span class="p">)</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="c1"># Sweep without recompiling (2,000 draws averaged per point)</span>
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="k">for</span> <span class="n">mult</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.6</span><span class="p">,</span> <span class="mf">1.2</span><span class="p">,</span> <span class="mi">7</span><span class="p">):</span>
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>    <span class="n">loss</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">([</span><span class="n">fn</span><span class="p">(</span><span class="n">mult</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2_000</span><span class="p">)])</span>
+<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"LGD </span><span class="si">{</span><span class="n">mult</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">x → Loss $</span><span class="si">{</span><span class="n">loss</span><span class="si">:</span><span class="s2">&gt;12,.0f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><span class="filename">Output</span><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>LGD 0.6x → Loss $   3,276,458
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>LGD 0.7x → Loss $   3,805,973
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>LGD 0.8x → Loss $   4,383,288
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>LGD 0.9x → Loss $   4,924,121
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>LGD 1.0x → Loss $   5,482,240
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>LGD 1.1x → Loss $   6,040,982
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>LGD 1.2x → Loss $   6,558,020
+</code></pre></div>
+<p>The relationship is roughly linear: each 0.1x increase in LGD adds ~$550K in expected loss.</p>
+<p><img alt="LGD sensitivity sweep" src="../../images/credit_migration_lgd_sweep.png"></p>
+<h3 id="pattern-3-explicit_graph_inputs-for-auto-discovery">Pattern 3: explicit_graph_inputs for auto-discovery</h3>
+<p>PyTensor's <a href="https://github.com/pymc-devs/pytensor/blob/main/pytensor/graph/traversal.py"><code>explicit_graph_inputs</code></a> automatically finds the free parameters in any expression:</p>
+<div class="highlight"><span class="filename">explicit_graph_inputs for auto-discovery</span><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">pytensor.graph.traversal</span><span class="w"> </span><span class="kn">import</span> <span class="n">explicit_graph_inputs</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="c1"># Define multiple sweepable parameters</span>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="n">lgd_multiplier</span> <span class="o">=</span> <span class="n">pt</span><span class="o">.</span><span class="n">scalar</span><span class="p">(</span><span class="s2">"lgd_multiplier"</span><span class="p">)</span>
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="n">pd_stress</span> <span class="o">=</span> <span class="n">pt</span><span class="o">.</span><span class="n">scalar</span><span class="p">(</span><span class="s2">"pd_stress"</span><span class="p">)</span>
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="n">recovery_senior</span> <span class="o">=</span> <span class="n">pt</span><span class="o">.</span><span class="n">scalar</span><span class="p">(</span><span class="s2">"recovery_senior"</span><span class="p">)</span>  <span class="c1"># never used below</span>
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="c1"># ... build the model using lgd_multiplier and pd_stress ...</span>
+<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a>
+<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a><span class="n">inputs</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">explicit_graph_inputs</span><span class="p">([</span><span class="n">total_loss</span><span class="p">]),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">v</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Discovered inputs: </span><span class="si">{</span><span class="p">[</span><span class="n">inp</span><span class="o">.</span><span class="n">name</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">inp</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">inputs</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><span class="filename">Output</span><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>Discovered inputs: ['lgd_multiplier', 'pd_stress']
+</code></pre></div>
+<p>Three scalars defined, two discovered. <code>recovery_senior</code> never flows into <code>total_loss</code>, so the traversal can't see it: defining a parameter is not enough, it has to be part of the computation. The <code>sorted</code> call matters too. <code>explicit_graph_inputs</code> returns a set, and the compiled function takes positional arguments in input order, so sort by name to keep calls stable.</p>
+<p>No manual registration. No rebuilding the model. The graph traversal finds every named <code>pt.scalar</code> in the computation and exposes it as a function input.</p>
+<h2 id="introspecting-the-graph">Introspecting the Graph</h2>
+<p>With numpy, operations execute eagerly: each one runs immediately and discards the computation. There is no graph to inspect. With PyTensor, the entire model is a static computation graph that you can query before running.</p>
+<h3 id="checking-for-random-variables">Checking for Random Variables</h3>
+<p>PyMC's <a href="https://github.com/pymc-devs/pymc/blob/main/pymc/pytensorf.py#L190"><code>rvs_in_graph</code></a> returns the set of random variable nodes in a graph:</p>
+<div class="highlight"><span class="filename">rvs_in_graph: detect uncertainty in the model</span><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">pymc.pytensorf</span><span class="w"> </span><span class="kn">import</span> <span class="n">rvs_in_graph</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="c1"># A model with uncertainty: random default rate, random recovery</span>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="n">exposure</span> <span class="o">=</span> <span class="mi">1_000_000</span>
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="n">pd</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">Gamma</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">mu</span><span class="o">=</span><span class="mf">0.10</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">0.02</span><span class="p">)</span>
+<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="n">recovery</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">Beta</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">mu</span><span class="o">=</span><span class="mf">0.45</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">0.15</span><span class="p">)</span>
+<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="n">total_loss</span> <span class="o">=</span> <span class="n">exposure</span> <span class="o">*</span> <span class="n">pd</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">recovery</span><span class="p">)</span>
+<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a>
+<a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a><span class="n">rvs</span> <span class="o">=</span> <span class="n">rvs_in_graph</span><span class="p">([</span><span class="n">total_loss</span><span class="p">])</span>
+<a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Random variables: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">rvs</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a><span class="nb">print</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">rvs</span><span class="p">)))</span>
+<a id="__codelineno-12-12" name="__codelineno-12-12" href="#__codelineno-12-12"></a>
+<a id="__codelineno-12-13" name="__codelineno-12-13" href="#__codelineno-12-13"></a><span class="c1"># A deterministic counterpart: fixed default rate, fixed recovery</span>
+<a id="__codelineno-12-14" name="__codelineno-12-14" href="#__codelineno-12-14"></a><span class="n">total_loss_det</span> <span class="o">=</span> <span class="n">exposure</span> <span class="o">*</span> <span class="mf">0.10</span> <span class="o">*</span> <span class="mf">0.55</span>
+<a id="__codelineno-12-15" name="__codelineno-12-15" href="#__codelineno-12-15"></a><span class="nb">print</span><span class="p">(</span><span class="n">rvs_in_graph</span><span class="p">([</span><span class="n">total_loss_det</span><span class="p">]))</span>
+</code></pre></div>
+<div class="highlight"><span class="filename">Output</span><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>Random variables: 2
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>['beta_rv{"(),()-&gt;()"}.out', 'gamma_rv{"(),()-&gt;()"}.out']
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>set()
+</code></pre></div>
+<p>An empty set is falsy, a non-empty set is truthy. That makes this a one-line validation: if you're running a Monte Carlo simulation but <code>rvs_in_graph</code> returns an empty set, something is wrong. The model is deterministic and there's no uncertainty to propagate.</p>
+<h3 id="searching-the-graph-by-name">Searching the Graph by Name</h3>
+<p><a href="https://github.com/pymc-devs/pytensor/blob/main/pytensor/graph/traversal.py"><code>get_var_by_name</code></a> finds any named node in a graph. The key detail: a tensor is findable only if you give it a <code>.name</code>. A Python variable name is not enough.</p>
+<div class="highlight"><span class="filename">get_var_by_name: search the graph by name</span><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">pytensor.graph.traversal</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_var_by_name</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="n">lgd_multiplier</span> <span class="o">=</span> <span class="n">pt</span><span class="o">.</span><span class="n">scalar</span><span class="p">(</span><span class="s2">"lgd_multiplier"</span><span class="p">)</span>
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="n">recovery</span> <span class="o">=</span> <span class="mf">0.45</span> <span class="o">*</span> <span class="n">lgd_multiplier</span>
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="n">lgd</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">recovery</span>
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="n">lgd</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">"lgd"</span>  <span class="c1"># naming the tensor is what makes it a landmark</span>
+<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a>
+<a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a><span class="n">toy_loss</span> <span class="o">=</span> <span class="mi">1_000</span> <span class="o">*</span> <span class="n">lgd</span>
+<a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a>
+<a id="__codelineno-14-10" name="__codelineno-14-10" href="#__codelineno-14-10"></a><span class="n">found</span> <span class="o">=</span> <span class="n">get_var_by_name</span><span class="p">([</span><span class="n">toy_loss</span><span class="p">],</span> <span class="s2">"lgd"</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<a id="__codelineno-14-11" name="__codelineno-14-11" href="#__codelineno-14-11"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Found: </span><span class="si">{</span><span class="n">found</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<a id="__codelineno-14-12" name="__codelineno-14-12" href="#__codelineno-14-12"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Value at multiplier 0.8: </span><span class="si">{</span><span class="n">found</span><span class="o">.</span><span class="n">eval</span><span class="p">({</span><span class="n">lgd_multiplier</span><span class="p">:</span><span class="w"> </span><span class="mf">0.8</span><span class="p">})</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><span class="filename">Output</span><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>Found: lgd
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>Value at multiplier 0.8: 0.64
+</code></pre></div>
+<p>Named tensors are <strong>landmarks</strong> in complex models. Name the checkpoints you care about while building (in the credit model below: <code>lgd</code>, <code>defaulted_exposure</code>, <code>total_loss</code>), and <code>get_var_by_name</code> extracts any of them later from a single compiled function. You don't have to return everything, rebuild the function, or break the computation. Eager execution discards intermediates the moment they're computed; there is nothing to search.</p>
+<h3 id="summary-three-functions-for-graph-introspection">Summary: Three Functions for Graph Introspection</h3>
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th>What It Finds</th>
+<th>Use Case</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://github.com/pymc-devs/pytensor/blob/main/pytensor/graph/traversal.py"><code>explicit_graph_inputs</code></a></td>
+<td>All free <code>pt.scalar</code>/<code>pt.vector</code> with no assigned value</td>
+<td>Auto-discover sensitivity parameters</td>
+</tr>
+<tr>
+<td><a href="https://github.com/pymc-devs/pymc/blob/main/pymc/pytensorf.py#L190"><code>rvs_in_graph</code></a></td>
+<td>All random variable nodes</td>
+<td>Check if model has uncertainty</td>
+</tr>
+<tr>
+<td><a href="https://github.com/pymc-devs/pytensor/blob/main/pytensor/graph/traversal.py"><code>get_var_by_name</code></a></td>
+<td>Any variable by name</td>
+<td>Debug, validate, extract specific values</td>
+</tr>
+</tbody>
+</table>
+<p>Together, these give you full introspection of the computation graph, something numpy's eager execution cannot provide.</p>
+<h2 id="building-a-credit-migration-model">Building a Credit Migration Model</h2>
+<h3 id="the-setup">The Setup</h3>
+<p>Credit migration tracks how borrowers move between ratings over time. A borrower rated BBB today might be upgraded to A or downgraded to BB, depending on their financial trajectory. Each transition has a probability:</p>
+<table>
+<thead>
+<tr>
+<th>From \ To</th>
+<th>AAA</th>
+<th>AA</th>
+<th>A</th>
+<th>BBB</th>
+<th>BB</th>
+<th>B</th>
+<th>D</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>AAA</strong></td>
+<td>87.3%</td>
+<td>8.9%</td>
+<td>3.4%</td>
+<td>0.4%</td>
+<td>0.1%</td>
+<td>0.0%</td>
+<td>0.0%</td>
+</tr>
+<tr>
+<td><strong>AA</strong></td>
+<td>0.1%</td>
+<td>87.8%</td>
+<td>9.6%</td>
+<td>1.8%</td>
+<td>0.5%</td>
+<td>0.2%</td>
+<td>0.0%</td>
+</tr>
+<tr>
+<td><strong>A</strong></td>
+<td>0.0%</td>
+<td>1.3%</td>
+<td>87.0%</td>
+<td>9.6%</td>
+<td>1.5%</td>
+<td>0.5%</td>
+<td>0.1%</td>
+</tr>
+<tr>
+<td><strong>BBB</strong></td>
+<td>0.0%</td>
+<td>0.1%</td>
+<td>2.5%</td>
+<td>85.7%</td>
+<td>9.1%</td>
+<td>2.4%</td>
+<td>0.3%</td>
+</tr>
+<tr>
+<td><strong>BB</strong></td>
+<td>0.0%</td>
+<td>0.0%</td>
+<td>0.1%</td>
+<td>3.4%</td>
+<td>80.1%</td>
+<td>11.4%</td>
+<td>5.0%</td>
+</tr>
+<tr>
+<td><strong>B</strong></td>
+<td>0.0%</td>
+<td>0.0%</td>
+<td>0.0%</td>
+<td>0.2%</td>
+<td>3.5%</td>
+<td>76.3%</td>
+<td>20.0%</td>
+</tr>
+<tr>
+<td><strong>D</strong></td>
+<td>0.0%</td>
+<td>0.0%</td>
+<td>0.0%</td>
+<td>0.0%</td>
+<td>0.0%</td>
+<td>0.0%</td>
+<td>100%</td>
+</tr>
+</tbody>
+</table>
+<p>Most borrowers stay in their current rating (the diagonal). The off-diagonal elements show upgrades (above diagonal) and downgrades (below diagonal). Default (D) is absorbing: once you default, you stay defaulted.</p>
+<p>Banks use transition matrices to project portfolio composition and compute RWA (risk-weighted assets), ECL (expected credit losses under the IFRS 9 provisioning standard), and stress test results.</p>
+<h3 id="the-transition-matrix">The Transition Matrix</h3>
+<p>Use <a href="https://www.pymc.io/projects/docs/en/latest/api/distributions/generated/pymc.Dirichlet.html"><code>pm.Dirichlet.dist</code></a> for Bayesian uncertainty in transition probabilities:</p>
+<div class="highlight"><span class="filename">Transition matrix with Dirichlet posteriors</span><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="kn">import</span><span class="w"> </span><span class="nn">pymc</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pm</span>
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="kn">import</span><span class="w"> </span><span class="nn">pytensor.tensor</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pt</span>
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>
+<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="n">RATINGS</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"AAA"</span><span class="p">,</span> <span class="s2">"AA"</span><span class="p">,</span> <span class="s2">"A"</span><span class="p">,</span> <span class="s2">"BBB"</span><span class="p">,</span> <span class="s2">"BB"</span><span class="p">,</span> <span class="s2">"B"</span><span class="p">,</span> <span class="s2">"D"</span><span class="p">]</span>
+<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a><span class="n">DEFAULT_IDX</span> <span class="o">=</span> <span class="mi">6</span>
+<a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a>
+<a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a><span class="c1"># Historical transition counts (Moody's data)</span>
+<a id="__codelineno-16-9" name="__codelineno-16-9" href="#__codelineno-16-9"></a><span class="c1"># Each row = transitions FROM that rating TO [AAA, AA, A, BBB, BB, B, D]</span>
+<a id="__codelineno-16-10" name="__codelineno-16-10" href="#__codelineno-16-10"></a><span class="n">counts</span> <span class="o">=</span> <span class="p">{</span>
+<a id="__codelineno-16-11" name="__codelineno-16-11" href="#__codelineno-16-11"></a>    <span class="s2">"AAA"</span><span class="p">:</span> <span class="p">[</span><span class="mi">8744</span><span class="p">,</span> <span class="mi">889</span><span class="p">,</span> <span class="mi">336</span><span class="p">,</span> <span class="mi">41</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+<a id="__codelineno-16-12" name="__codelineno-16-12" href="#__codelineno-16-12"></a>    <span class="s2">"AA"</span><span class="p">:</span>  <span class="p">[</span><span class="mi">6</span><span class="p">,</span> <span class="mi">8749</span><span class="p">,</span> <span class="mi">959</span><span class="p">,</span> <span class="mi">181</span><span class="p">,</span> <span class="mi">46</span><span class="p">,</span> <span class="mi">24</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+<a id="__codelineno-16-13" name="__codelineno-16-13" href="#__codelineno-16-13"></a>    <span class="s2">"A"</span><span class="p">:</span>   <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="mi">8676</span><span class="p">,</span> <span class="mi">961</span><span class="p">,</span> <span class="mi">150</span><span class="p">,</span> <span class="mi">52</span><span class="p">,</span> <span class="mi">5</span><span class="p">],</span>
+<a id="__codelineno-16-14" name="__codelineno-16-14" href="#__codelineno-16-14"></a>    <span class="s2">"BBB"</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">244</span><span class="p">,</span> <span class="mi">8516</span><span class="p">,</span> <span class="mi">900</span><span class="p">,</span> <span class="mi">236</span><span class="p">,</span> <span class="mi">33</span><span class="p">],</span>
+<a id="__codelineno-16-15" name="__codelineno-16-15" href="#__codelineno-16-15"></a>    <span class="s2">"BB"</span><span class="p">:</span>  <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">335</span><span class="p">,</span> <span class="mi">7910</span><span class="p">,</span> <span class="mi">1123</span><span class="p">,</span> <span class="mi">498</span><span class="p">],</span>
+<a id="__codelineno-16-16" name="__codelineno-16-16" href="#__codelineno-16-16"></a>    <span class="s2">"B"</span><span class="p">:</span>   <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">18</span><span class="p">,</span> <span class="mi">345</span><span class="p">,</span> <span class="mi">7634</span><span class="p">,</span> <span class="mi">2000</span><span class="p">],</span>
+<a id="__codelineno-16-17" name="__codelineno-16-17" href="#__codelineno-16-17"></a><span class="p">}</span>
+<a id="__codelineno-16-18" name="__codelineno-16-18" href="#__codelineno-16-18"></a>
+<a id="__codelineno-16-19" name="__codelineno-16-19" href="#__codelineno-16-19"></a><span class="c1"># One Dirichlet per living rating: all rows drawn at once</span>
+<a id="__codelineno-16-20" name="__codelineno-16-20" href="#__codelineno-16-20"></a><span class="n">T_nondefault</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">Dirichlet</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">counts</span><span class="o">.</span><span class="n">values</span><span class="p">())))</span>  <span class="c1"># (6, 7)</span>
+<a id="__codelineno-16-21" name="__codelineno-16-21" href="#__codelineno-16-21"></a>
+<a id="__codelineno-16-22" name="__codelineno-16-22" href="#__codelineno-16-22"></a><span class="n">T</span> <span class="o">=</span> <span class="n">pt</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">7</span><span class="p">,</span> <span class="mi">7</span><span class="p">))</span>
+<a id="__codelineno-16-23" name="__codelineno-16-23" href="#__codelineno-16-23"></a><span class="n">T</span> <span class="o">=</span> <span class="n">pt</span><span class="o">.</span><span class="n">set_subtensor</span><span class="p">(</span><span class="n">T</span><span class="p">[:</span><span class="mi">6</span><span class="p">],</span> <span class="n">T_nondefault</span><span class="p">)</span>
+<a id="__codelineno-16-24" name="__codelineno-16-24" href="#__codelineno-16-24"></a>
+<a id="__codelineno-16-25" name="__codelineno-16-25" href="#__codelineno-16-25"></a><span class="c1"># Pin the absorbing state (default → default = 1.0)</span>
+<a id="__codelineno-16-26" name="__codelineno-16-26" href="#__codelineno-16-26"></a><span class="n">T</span> <span class="o">=</span> <span class="n">pt</span><span class="o">.</span><span class="n">set_subtensor</span><span class="p">(</span><span class="n">T</span><span class="p">[</span><span class="n">DEFAULT_IDX</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">])</span>
+</code></pre></div>
+<p><code>pm.Dirichlet.dist</code> with a 2D concentration matrix draws all rows simultaneously. Each row is an independent Dirichlet sample; the rows don't interact. The default row never enters the Dirichlet. Default is absorbing, so there is nothing to estimate: the row is pinned to the identity with <code>set_subtensor</code>.</p>
+<h3 id="the-markov-trace">The Markov Trace</h3>
+<p>Use <a href="https://pytensor.readthedocs.io/en/latest/library/scan.html"><code>pytensor.scan</code></a> to iterate the cohort through the transition matrix:</p>
+<div class="highlight"><span class="filename">Markov trace via pytensor.scan</span><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="c1"># Initial portfolio (fractions by rating)</span>
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="n">cohort0</span> <span class="o">=</span> <span class="n">pt</span><span class="o">.</span><span class="n">as_tensor_variable</span><span class="p">([</span><span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.15</span><span class="p">,</span> <span class="mf">0.40</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">,</span> <span class="mf">0.10</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.00</span><span class="p">])</span>
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="c1"># Scan: iterate cohort @ T for 5 years</span>
+<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="k">def</span><span class="w"> </span><span class="nf">step</span><span class="p">(</span><span class="n">cohort_t</span><span class="p">,</span> <span class="n">T</span><span class="p">):</span>
+<a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a>    <span class="k">return</span> <span class="n">cohort_t</span> <span class="o">@</span> <span class="n">T</span>
+<a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a>
+<a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a><span class="n">trace</span> <span class="o">=</span> <span class="n">pytensor</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span>
+<a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a>    <span class="n">fn</span><span class="o">=</span><span class="n">step</span><span class="p">,</span>
+<a id="__codelineno-17-10" name="__codelineno-17-10" href="#__codelineno-17-10"></a>    <span class="n">outputs_info</span><span class="o">=</span><span class="p">[</span><span class="n">cohort0</span><span class="p">],</span>
+<a id="__codelineno-17-11" name="__codelineno-17-11" href="#__codelineno-17-11"></a>    <span class="n">non_sequences</span><span class="o">=</span><span class="p">[</span><span class="n">T</span><span class="p">],</span>
+<a id="__codelineno-17-12" name="__codelineno-17-12" href="#__codelineno-17-12"></a>    <span class="n">n_steps</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+<a id="__codelineno-17-13" name="__codelineno-17-13" href="#__codelineno-17-13"></a>    <span class="n">return_updates</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<a id="__codelineno-17-14" name="__codelineno-17-14" href="#__codelineno-17-14"></a><span class="p">)</span>
+<a id="__codelineno-17-15" name="__codelineno-17-15" href="#__codelineno-17-15"></a>
+<a id="__codelineno-17-16" name="__codelineno-17-16" href="#__codelineno-17-16"></a><span class="c1"># trace shape: (5, 7), i.e. 5 years × 7 ratings</span>
+</code></pre></div>
+<p>Each step multiplies the cohort vector by the transition matrix. The result is a trace showing how the portfolio evolves:</p>
+<table>
+<thead>
+<tr>
+<th>Year</th>
+<th>AAA</th>
+<th>AA</th>
+<th>A</th>
+<th>BBB</th>
+<th>BB</th>
+<th>B</th>
+<th>D (Default)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>5.0%</td>
+<td>15.0%</td>
+<td>40.0%</td>
+<td>25.0%</td>
+<td>10.0%</td>
+<td>5.0%</td>
+<td>0.0%</td>
+</tr>
+<tr>
+<td>1</td>
+<td>4.4%</td>
+<td>14.1%</td>
+<td>37.0%</td>
+<td>25.9%</td>
+<td>11.1%</td>
+<td>5.8%</td>
+<td>1.6%</td>
+</tr>
+<tr>
+<td>2</td>
+<td>3.8%</td>
+<td>13.3%</td>
+<td>34.4%</td>
+<td>26.5%</td>
+<td>12.1%</td>
+<td>6.5%</td>
+<td>3.4%</td>
+</tr>
+<tr>
+<td>3</td>
+<td>3.4%</td>
+<td>12.5%</td>
+<td>32.0%</td>
+<td>26.7%</td>
+<td>12.9%</td>
+<td>7.2%</td>
+<td>5.5%</td>
+</tr>
+<tr>
+<td>4</td>
+<td>3.0%</td>
+<td>11.7%</td>
+<td>29.8%</td>
+<td>26.6%</td>
+<td>13.5%</td>
+<td>7.8%</td>
+<td>7.7%</td>
+</tr>
+<tr>
+<td>5</td>
+<td>2.6%</td>
+<td>10.9%</td>
+<td>27.8%</td>
+<td>26.4%</td>
+<td>14.0%</td>
+<td>8.3%</td>
+<td><strong>10.0%</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>What the numbers show:</strong>
+- AAA shrinks from 5.0% to 2.6%: half the AAA borrowers are downgraded over 5 years
+- Default grows from 0% to <strong>10.0%</strong>
+- BBB is relatively stable (25.0% → 26.4%): upgrades and downgrades roughly balance
+- Speculative grade (BB+B) grows from 15% to 22.3%: borrowers fall into riskier categories</p>
+<p><img alt="Portfolio evolution over 5 years, stacked by rating" src="../../images/credit_migration_trace.png"></p>
+<p>That 10% five-year default rate is why banks hold capital reserves.</p>
+<h3 id="a-time-varying-transition-tensor">A Time-Varying Transition Tensor</h3>
+<p>The scan above iterates a static matrix, but nothing about it requires one. Hand it a tensor of shape (5, 7, 7), one matrix per year, and the same composition, compilation, and introspection work unchanged. Suppose stress builds over the horizon. IFRS 9 ECL accounting expects exactly that: provisions must reflect forward-looking macro conditions, not one average scenario:</p>
+<div class="highlight"><span class="filename">Time-varying transitions: same scan, stacked tensor</span><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="c1"># Per-year PD stress profile: benign early, stressed late</span>
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="n">pd_ramp</span> <span class="o">=</span> <span class="n">pt</span><span class="o">.</span><span class="n">as_tensor_variable</span><span class="p">([</span><span class="mf">0.9</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.1</span><span class="p">,</span> <span class="mf">1.2</span><span class="p">,</span> <span class="mf">1.3</span><span class="p">])</span>
+<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>
+<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="c1"># Stack the same posterior draw into a (5, 7, 7) tensor</span>
+<a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span class="n">T_stack</span> <span class="o">=</span> <span class="n">pt</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">T</span><span class="p">]</span> <span class="o">*</span> <span class="mi">5</span><span class="p">)</span>
+<a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a><span class="n">col</span> <span class="o">=</span> <span class="n">T_stack</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">DEFAULT_IDX</span><span class="p">]</span> <span class="o">*</span> <span class="n">pd_ramp</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>     <span class="c1"># broadcasts over ratings</span>
+<a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a><span class="n">T_stack</span> <span class="o">=</span> <span class="n">pt</span><span class="o">.</span><span class="n">set_subtensor</span><span class="p">(</span><span class="n">T_stack</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">DEFAULT_IDX</span><span class="p">],</span> <span class="n">col</span><span class="p">)</span>
+<a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a><span class="n">T_stack</span> <span class="o">=</span> <span class="n">T_stack</span> <span class="o">/</span> <span class="n">T_stack</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># renormalize each year</span>
+<a id="__codelineno-18-9" name="__codelineno-18-9" href="#__codelineno-18-9"></a>
+<a id="__codelineno-18-10" name="__codelineno-18-10" href="#__codelineno-18-10"></a><span class="c1"># Scan passes sequence items first, so the step signature flips</span>
+<a id="__codelineno-18-11" name="__codelineno-18-11" href="#__codelineno-18-11"></a><span class="k">def</span><span class="w"> </span><span class="nf">step</span><span class="p">(</span><span class="n">T_t</span><span class="p">,</span> <span class="n">cohort_t</span><span class="p">):</span>
+<a id="__codelineno-18-12" name="__codelineno-18-12" href="#__codelineno-18-12"></a>    <span class="k">return</span> <span class="n">cohort_t</span> <span class="o">@</span> <span class="n">T_t</span>
+<a id="__codelineno-18-13" name="__codelineno-18-13" href="#__codelineno-18-13"></a>
+<a id="__codelineno-18-14" name="__codelineno-18-14" href="#__codelineno-18-14"></a><span class="n">trace</span> <span class="o">=</span> <span class="n">pytensor</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span>
+<a id="__codelineno-18-15" name="__codelineno-18-15" href="#__codelineno-18-15"></a>    <span class="n">fn</span><span class="o">=</span><span class="n">step</span><span class="p">,</span>
+<a id="__codelineno-18-16" name="__codelineno-18-16" href="#__codelineno-18-16"></a>    <span class="n">outputs_info</span><span class="o">=</span><span class="p">[</span><span class="n">cohort0</span><span class="p">],</span>
+<a id="__codelineno-18-17" name="__codelineno-18-17" href="#__codelineno-18-17"></a>    <span class="n">sequences</span><span class="o">=</span><span class="p">[</span><span class="n">T_stack</span><span class="p">],</span>
+<a id="__codelineno-18-18" name="__codelineno-18-18" href="#__codelineno-18-18"></a>    <span class="n">n_steps</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+<a id="__codelineno-18-19" name="__codelineno-18-19" href="#__codelineno-18-19"></a>    <span class="n">return_updates</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<a id="__codelineno-18-20" name="__codelineno-18-20" href="#__codelineno-18-20"></a><span class="p">)</span>
+</code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Scan argument order is a trap</p>
+<p>Scan passes sequence items before output taps. Get the signature backwards and the model still runs, but it silently computes the transposed dynamics. This is where named variables pay off: <code>T_stack.name = "T_stack"</code>, <code>trace.name = "trace"</code>, then <code>get_var_by_name</code> fetches them and <code>eval()</code> proves the internals (rows sum to 1 in every year, cohort conserved). The debugging tool is the same one the post is selling.</p>
+</div>
+<p>The ramp shifts the default path year by year:</p>
+<table>
+<thead>
+<tr>
+<th>Year</th>
+<th>Static</th>
+<th>Ramped</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>1.6%</td>
+<td>1.5%</td>
+</tr>
+<tr>
+<td>2</td>
+<td>3.4%</td>
+<td>3.3%</td>
+</tr>
+<tr>
+<td>3</td>
+<td>5.5%</td>
+<td>5.5%</td>
+</tr>
+<tr>
+<td>4</td>
+<td>7.7%</td>
+<td>8.1%</td>
+</tr>
+<tr>
+<td>5</td>
+<td>10.0%</td>
+<td><strong>10.9%</strong></td>
+</tr>
+</tbody>
+</table>
+<p><img alt="Default path by year, static vs ramped transition tensor" src="../../images/credit_migration_default_path.png"></p>
+<p>The five-year default rate rises from 10.0% to 10.9%, and mean loss from $5.47M to $5.97M. The profile <code>pd_ramp</code> is just a tensor: scale it by a <code>pt.scalar</code>, drive it from macro data, or draw it from a posterior, and the same compiled function accepts it. If it broadcasts through the graph, it composes.</p>
+<h3 id="seeing-the-uncertainty">Seeing the Uncertainty</h3>
+<p>The deterministic trace shows one possible outcome. But transition probabilities are estimated from historical data: there's uncertainty in every cell of the matrix. Here's what happens when we sample 1,000 different transition matrices from the Dirichlet posterior:</p>
+<div class="highlight"><span class="filename">1,000 Monte Carlo draws from Dirichlet posteriors</span><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="n">default_rate_path</span> <span class="o">=</span> <span class="n">trace</span><span class="p">[:,</span> <span class="n">DEFAULT_IDX</span><span class="p">]</span>  <span class="c1"># per-year default rate</span>
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>
+<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a><span class="n">fn</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">compile</span><span class="p">([],</span> <span class="n">default_rate_path</span><span class="p">)</span>
+<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a><span class="n">draws</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">fn</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1_000</span><span class="p">)])</span>  <span class="c1"># (1_000, 5)</span>
+</code></pre></div>
+<p>Each call draws a fresh transition matrix from the Dirichlet posterior. The result:</p>
+<p><img alt="Default rate uncertainty, 1,000 Monte Carlo draws" src="../../images/credit_migration_uncertainty.png"></p>
+<p>With 10,000+ observations per transition (Moody's data), the uncertainty is tight: the 80% interval for the five-year default rate spans 9.8% to 10.3%. For a $100M portfolio, that's a $500K range in expected losses. In stress scenarios with fewer observations, the intervals widen considerably.</p>
+<h3 id="the-cost-model">The Cost Model</h3>
+<p>Recovery rates vary by seniority. Use <a href="https://www.pymc.io/projects/docs/en/latest/api/distributions/mixture.html"><code>pm.Mixture.dist</code></a> for the portfolio-weighted average:</p>
+<div class="highlight"><span class="filename">Recovery rates with mixture distribution</span><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="n">PORTFOLIO_VALUE</span> <span class="o">=</span> <span class="mi">100_000_000</span>
+<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>
+<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="n">senior_secured</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">Beta</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">mu</span><span class="o">=</span><span class="mf">0.60</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">0.15</span><span class="p">)</span>
+<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="n">senior_unsecured</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">Beta</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">mu</span><span class="o">=</span><span class="mf">0.45</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">0.20</span><span class="p">)</span>
+<a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a><span class="n">subordinated</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">Beta</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">mu</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">0.15</span><span class="p">)</span>
+<a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a>
+<a id="__codelineno-20-7" name="__codelineno-20-7" href="#__codelineno-20-7"></a><span class="c1"># Portfolio-weighted mixture</span>
+<a id="__codelineno-20-8" name="__codelineno-20-8" href="#__codelineno-20-8"></a><span class="n">recovery</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">Mixture</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span>
+<a id="__codelineno-20-9" name="__codelineno-20-9" href="#__codelineno-20-9"></a>    <span class="n">w</span><span class="o">=</span><span class="p">[</span><span class="mf">0.30</span><span class="p">,</span> <span class="mf">0.50</span><span class="p">,</span> <span class="mf">0.20</span><span class="p">],</span>
+<a id="__codelineno-20-10" name="__codelineno-20-10" href="#__codelineno-20-10"></a>    <span class="n">comp_dists</span><span class="o">=</span><span class="p">[</span><span class="n">senior_secured</span><span class="p">,</span> <span class="n">senior_unsecured</span><span class="p">,</span> <span class="n">subordinated</span><span class="p">],</span>
+<a id="__codelineno-20-11" name="__codelineno-20-11" href="#__codelineno-20-11"></a><span class="p">)</span>
+<a id="__codelineno-20-12" name="__codelineno-20-12" href="#__codelineno-20-12"></a>
+<a id="__codelineno-20-13" name="__codelineno-20-13" href="#__codelineno-20-13"></a><span class="c1"># Loss given default</span>
+<a id="__codelineno-20-14" name="__codelineno-20-14" href="#__codelineno-20-14"></a><span class="n">lgd</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">recovery</span>
+<a id="__codelineno-20-15" name="__codelineno-20-15" href="#__codelineno-20-15"></a>
+<a id="__codelineno-20-16" name="__codelineno-20-16" href="#__codelineno-20-16"></a><span class="c1"># Total loss = defaulted exposure × LGD</span>
+<a id="__codelineno-20-17" name="__codelineno-20-17" href="#__codelineno-20-17"></a><span class="n">defaulted_exposure</span> <span class="o">=</span> <span class="n">trace</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">DEFAULT_IDX</span><span class="p">]</span> <span class="o">*</span> <span class="n">PORTFOLIO_VALUE</span>
+<a id="__codelineno-20-18" name="__codelineno-20-18" href="#__codelineno-20-18"></a><span class="n">total_loss</span> <span class="o">=</span> <span class="n">defaulted_exposure</span> <span class="o">*</span> <span class="n">lgd</span>
+</code></pre></div>
+<h3 id="compile-and-run">Compile and Run</h3>
+<div class="highlight"><span class="filename">Compile and run Monte Carlo</span><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="n">fn</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">compile</span><span class="p">([],</span> <span class="n">total_loss</span><span class="p">,</span> <span class="n">random_seed</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
+<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>
+<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a><span class="c1"># Run 10,000 Monte Carlo iterations</span>
+<a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a><span class="n">results</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">fn</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10_000</span><span class="p">)])</span>
+<a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a>
+<a id="__codelineno-21-6" name="__codelineno-21-6" href="#__codelineno-21-6"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Mean loss:         $</span><span class="si">{</span><span class="n">results</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">&gt;12,.0f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<a id="__codelineno-21-7" name="__codelineno-21-7" href="#__codelineno-21-7"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"95th percentile:   $</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">results</span><span class="p">,</span><span class="w"> </span><span class="mi">95</span><span class="p">)</span><span class="si">:</span><span class="s2">&gt;12,.0f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<a id="__codelineno-21-8" name="__codelineno-21-8" href="#__codelineno-21-8"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"99.9th percentile: $</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">results</span><span class="p">,</span><span class="w"> </span><span class="mf">99.9</span><span class="p">)</span><span class="si">:</span><span class="s2">&gt;12,.0f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><span class="filename">Output</span><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>Mean loss:         $   5,466,093
+<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a>95th percentile:   $   8,983,831
+<a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a>99.9th percentile: $  10,022,964
+</code></pre></div>
+<p>With <code>random_seed</code> set, every rerun reproduces these numbers exactly, which is what model validation asks for. The mean is the expected loss; the distance from the mean to the 99.9th percentile, about $4.56M here, is the unexpected loss that capital has to absorb.</p>
+<p>The histogram below shows the full loss distribution. The 95th and 99.9th percentiles mark the tail risk that regulators care about:</p>
+<p><img alt="Monte Carlo loss distribution with sensitivity plots" src="../../images/credit_migration_results.png"></p>
+<h2 id="sensitivity-analysis">Sensitivity Analysis</h2>
+<h3 id="the-problem_1">The Problem</h3>
+<p>Banks need to sweep parameters to understand sensitivity. How does RWA change if LGD increases? What if default rates double under stress? In SAS or Excel, each sweep requires rebuilding the model.</p>
+<h3 id="the-solution">The Solution</h3>
+<p>PD (probability of default) stress scales the default column of the transition matrix. After scaling, the rows are renormalized so the matrix stays stochastic:</p>
+<div class="highlight"><span class="filename">Sensitivity analysis with pt.scalar</span><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="n">pd_stress</span> <span class="o">=</span> <span class="n">pt</span><span class="o">.</span><span class="n">scalar</span><span class="p">(</span><span class="s2">"pd_stress"</span><span class="p">)</span>
+<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>
+<a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a><span class="c1"># Scale the default column, then renormalize rows</span>
+<a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a><span class="n">col</span> <span class="o">=</span> <span class="n">T</span><span class="p">[:,</span> <span class="n">DEFAULT_IDX</span><span class="p">]</span> <span class="o">*</span> <span class="n">pd_stress</span>
+<a id="__codelineno-23-5" name="__codelineno-23-5" href="#__codelineno-23-5"></a><span class="n">T_stressed</span> <span class="o">=</span> <span class="n">pt</span><span class="o">.</span><span class="n">set_subtensor</span><span class="p">(</span><span class="n">T</span><span class="p">[:,</span> <span class="n">DEFAULT_IDX</span><span class="p">],</span> <span class="n">col</span><span class="p">)</span>
+<a id="__codelineno-23-6" name="__codelineno-23-6" href="#__codelineno-23-6"></a><span class="n">T_stressed</span> <span class="o">=</span> <span class="n">T_stressed</span> <span class="o">/</span> <span class="n">T_stressed</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="__codelineno-23-7" name="__codelineno-23-7" href="#__codelineno-23-7"></a>
+<a id="__codelineno-23-8" name="__codelineno-23-8" href="#__codelineno-23-8"></a><span class="c1"># ... rebuild the trace with T_stressed ...</span>
+<a id="__codelineno-23-9" name="__codelineno-23-9" href="#__codelineno-23-9"></a>
+<a id="__codelineno-23-10" name="__codelineno-23-10" href="#__codelineno-23-10"></a><span class="n">fn</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">compile</span><span class="p">([</span><span class="n">pd_stress</span><span class="p">],</span> <span class="n">total_loss</span><span class="p">)</span>
+<a id="__codelineno-23-11" name="__codelineno-23-11" href="#__codelineno-23-11"></a>
+<a id="__codelineno-23-12" name="__codelineno-23-12" href="#__codelineno-23-12"></a><span class="c1"># 2,000 draws averaged per point</span>
+<a id="__codelineno-23-13" name="__codelineno-23-13" href="#__codelineno-23-13"></a><span class="k">for</span> <span class="n">stress</span> <span class="ow">in</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">]:</span>
+<a id="__codelineno-23-14" name="__codelineno-23-14" href="#__codelineno-23-14"></a>    <span class="n">loss</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">([</span><span class="n">fn</span><span class="p">(</span><span class="n">stress</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2_000</span><span class="p">)])</span>
+<a id="__codelineno-23-15" name="__codelineno-23-15" href="#__codelineno-23-15"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"PD </span><span class="si">{</span><span class="n">stress</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">x → Loss $</span><span class="si">{</span><span class="n">loss</span><span class="si">:</span><span class="s2">&gt;12,.0f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><span class="filename">Output</span><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>PD 1.0x → Loss $   5,461,141
+<a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a>PD 1.5x → Loss $   7,067,245
+<a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a>PD 2.0x → Loss $   8,256,315
+<a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a>PD 2.5x → Loss $   9,241,507
+<a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a>PD 3.0x → Loss $  10,005,035
+</code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">Keep the matrix stochastic</p>
+<p>Scaling the default column without renormalizing the rows breaks the transition matrix: rows no longer sum to one, and the sweep will happily report losses larger than the portfolio itself. Renormalize after scaling.</p>
+</div>
+<p>Where the LGD sweep (Pattern 2) is roughly linear, PD stress is sublinear: speculative-grade default probabilities saturate as the multiplier grows, so each extra unit of stress buys less. At 3x stress, losses still double, from ~$5.5M to $10M.</p>
+<p>The two-way heatmap shows how LGD and PD stress interact:</p>
+<p><img alt="Two-way sensitivity heatmap: LGD × PD Stress" src="../../images/credit_migration_heatmap.png"></p>
+<p>No recompilation. No rebuilding the model. The same compiled function handles both the Monte Carlo run and the sensitivity sweeps.</p>
+<h2 id="why-this-matters">Why This Matters</h2>
+<h3 id="the-paradigm-not-just-speed">The Paradigm, Not Just Speed</h3>
+<p>For a simple 7×7 matrix multiply, numpy is actually faster: no graph overhead, direct BLAS call. The PyTensor advantage is not raw speed for simple operations. It's the <strong>paradigm</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Capability</th>
+<th>numpy loop</th>
+<th>PyTensor compiled</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Matrix-vector multiply</td>
+<td>Direct BLAS (fastest)</td>
+<td>Dot via scan (slight overhead)</td>
+</tr>
+<tr>
+<td>Embedded distributions</td>
+<td>Manual seed management</td>
+<td>Automatic via <code>pm.compile</code></td>
+</tr>
+<tr>
+<td>Composition of distributions</td>
+<td>Not possible</td>
+<td>Tensors compose into graph</td>
+</tr>
+<tr>
+<td>Sensitivity analysis</td>
+<td>Rebuild model for each parameter</td>
+<td>Auto-discovered, no recompilation</td>
+</tr>
+<tr>
+<td>Graph optimization</td>
+<td>None</td>
+<td>CVM fuses operations</td>
+</tr>
+</tbody>
+</table>
+<p>With numpy you'd manage random state for each distribution, compose the pieces yourself, and rebuild the model for every sensitivity parameter. The engineering win is not raw speed on toy graphs; it is never writing that plumbing by hand.</p>
+<h3 id="the-flexibility">The Flexibility</h3>
+<table>
+<thead>
+<tr>
+<th>Capability</th>
+<th>numpy/scipy</th>
+<th>PyMC + PyTensor</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Distributions</td>
+<td>20+ in scipy</td>
+<td>50+ in PyMC, vectorized</td>
+</tr>
+<tr>
+<td>Meta-distributions</td>
+<td>Manual implementation</td>
+<td>Mixture, Truncated, RandomWalk built-in</td>
+</tr>
+<tr>
+<td>Compilation</td>
+<td>Not possible</td>
+<td>pm.compile to C</td>
+</tr>
+<tr>
+<td>Sensitivity analysis</td>
+<td>Manual parameter passing</td>
+<td>Auto-discovered via graph introspection</td>
+</tr>
+<tr>
+<td>Time-varying parameters</td>
+<td>Manual reshaping and relooping</td>
+<td>(horizon, ...) tensor broadcasts into the same scan</td>
+</tr>
+<tr>
+<td>MCMC integration</td>
+<td>Manual resampling</td>
+<td>Categorical index over draws, inside the compiled graph</td>
+</tr>
+</tbody>
+</table>
+<h3 id="the-integration">The Integration</h3>
+<p>PyMC distributions are the bridge between inference and simulation. You can:</p>
+<ol>
+<li><strong>Fit a Bayesian model</strong> to historical data (MCMC)</li>
+<li><strong>Stack the posterior draws</strong> into a numpy array, shape (n_draws, n_params)</li>
+<li><strong>Index the stack from inside the graph</strong>: a <code>pm.Categorical.dist</code> over draw indices, sliced against the stacked array, is one tensor per parameter</li>
+<li><strong>Compile</strong> the whole pipeline: each call picks one posterior-consistent parameter set and runs the model</li>
+</ol>
+<div class="highlight"><span class="filename">Posterior draws as an embedded distribution</span><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="c1"># posterior_draws: numpy array, shape (n_draws, 2)</span>
+<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a><span class="n">n</span> <span class="o">=</span> <span class="n">posterior_draws</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a><span class="n">idx</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">Categorical</span><span class="o">.</span><span class="n">dist</span><span class="p">(</span><span class="n">p</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">n</span><span class="p">))</span>
+<a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a><span class="n">stacked</span> <span class="o">=</span> <span class="n">pt</span><span class="o">.</span><span class="n">as_tensor_variable</span><span class="p">(</span><span class="n">posterior_draws</span><span class="p">)</span>
+<a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a><span class="n">alpha</span> <span class="o">=</span> <span class="n">stacked</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">][</span><span class="n">idx</span><span class="p">]</span>
+<a id="__codelineno-25-6" name="__codelineno-25-6" href="#__codelineno-25-6"></a><span class="n">beta</span> <span class="o">=</span> <span class="n">stacked</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">][</span><span class="n">idx</span><span class="p">]</span>
+<a id="__codelineno-25-7" name="__codelineno-25-7" href="#__codelineno-25-7"></a>
+<a id="__codelineno-25-8" name="__codelineno-25-8" href="#__codelineno-25-8"></a><span class="c1"># alpha and beta share the index: each call is one joint posterior draw</span>
+<a id="__codelineno-25-9" name="__codelineno-25-9" href="#__codelineno-25-9"></a><span class="n">fn</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">compile</span><span class="p">([],</span> <span class="n">total_loss</span><span class="p">)</span>  <span class="c1"># with alpha and beta woven into the loss</span>
+<a id="__codelineno-25-10" name="__codelineno-25-10" href="#__codelineno-25-10"></a><span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10_000</span><span class="p">):</span>
+<a id="__codelineno-25-11" name="__codelineno-25-11" href="#__codelineno-25-11"></a>    <span class="n">result</span> <span class="o">=</span> <span class="n">fn</span><span class="p">()</span>
+</code></pre></div>
+<p>A <code>Categorical</code> index over draws is just another embedded distribution; <code>pm.compile</code> manages its randomness like every other node. The result is one compiled function that runs the fitted model, posterior uncertainty included.</p>
+<p>With numpy there is no graph to compose into. Each draw executes immediately, and the connection between inference and simulation is glue code you maintain by hand.</p>
+<h2 id="reproducibility">Reproducibility</h2>
+<p>Every number and figure in this post comes from committed scripts in <code>docs/blog/posts/scripts/compiled-markov-credit-risk/</code>:</p>
+<ul>
+<li><code>credit_model.py</code>: the shared model (transition matrix, scan, recovery mixture)</li>
+<li><code>verify_snippets.py</code>: rebuilds the model and prints every output block shown above</li>
+<li><code>make_figures.py</code>: regenerates every figure</li>
+</ul>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>uv<span class="w"> </span>run<span class="w"> </span>docs/blog/posts/scripts/compiled-markov-credit-risk/verify_snippets.py
+<a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a>uv<span class="w"> </span>run<span class="w"> </span>docs/blog/posts/scripts/compiled-markov-credit-risk/make_figures.py
+</code></pre></div>
+<h2 id="whats-missing">What's Missing</h2>
+<p>The gap from The Problem is real: estimation tools exist, compiled simulation does not. The building blocks exist (PyMC, PyTensor). The application (credit risk) is well-defined. The combination just hasn't been built (at least not as a standard, reusable Python package).</p>
+<p>The model itself has limits worth naming:</p>
+<ul>
+<li><strong>Default correlation</strong>: one shared transition-matrix draw correlates obligors within a rating, but a real portfolio needs a systematic factor hitting every rating at once; the standard machinery is the Vasicek one-factor model and copulas, the structures behind regulatory capital formulas</li>
+<li><strong>Downturn LGD</strong>: recovery is drawn independently of the economic state; in reality recoveries fall in recessions</li>
+<li><strong>Discounting and staging</strong>: IFRS 9 ECL is discounted and staged (12-month vs lifetime losses); both read straight off the trace the model already returns</li>
+<li><strong>Validation</strong>: the Dirichlet posteriors need backtesting against realized migrations</li>
+</ul>
+<p>The time-varying tensor is the seam where most of these plug in: a systematic factor scaling the stress profile, a downturn multiplier on recovery, a discount vector over the horizon. Same pattern, same compiled function.</p>
+<h2 id="whats-next">What's Next</h2>
+<p>This post demonstrates the paradigm on credit migration. The same patterns apply to:</p>
+<ul>
+<li><strong>Insurance</strong>: claim frequency/severity simulation with Bayesian posteriors</li>
+<li><strong>Healthcare</strong>: Markov cohort models for cost-effectiveness analysis</li>
+<li><strong>Airport revenue</strong>: parking demand forecasting with parameter uncertainty</li>
+<li><strong>Equipment maintenance</strong>: failure prediction with Weibull distributions</li>
+</ul>
+<p>If you're working on credit risk in Python and want to discuss this approach, <a href="https://www.linkedin.com/in/williambdean/">let me know</a>.</p></div>
+
+
+
+
+
+
+
+  
+    
+  
+  
+    
+  
+
+
+  <aside class="md-source-file">
+    
+      
+  <span class="md-source-file__fact">
+    <span class="md-icon" title="Last update">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
+    </span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 19, 2026 20:46:43">November 19, 2026</span>
+  </span>
+
+    
+    
+      
+  <span class="md-source-file__fact">
+    <span class="md-icon" title="Created">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.47 15.08 11 13V7h1.5v5.25l3.08 1.83c-.41.28-.79.62-1.11 1m-1.39 4.84c-.36.05-.71.08-1.08.08-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8c0 .37-.03.72-.08 1.08.69.1 1.33.32 1.92.64.1-.56.16-1.13.16-1.72 0-5.5-4.5-10-10-10S2 6.5 2 12s4.47 10 10 10c.59 0 1.16-.06 1.72-.16-.32-.59-.54-1.23-.64-1.92M18 15v3h-3v2h3v3h2v-3h3v-2h-3v-3z"/></svg>
+    </span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 19, 2026 20:46:43">November 19, 2026</span>
+  </span>
+
+    
+    
+    
+  </aside>
+
+
+  
+
+
+
+
+  <h2 id="__comments">Comments</h2>
+  <!-- Insert generated snippet here -->
+  <script src="https://giscus.app/client.js"
+    data-repo="williambdean/williambdean.github.io"
+    data-repo-id="R_kgDOIo0AaA"
+    data-category-id="DIC_kwDOIo0AaM4CTKGX"
+    data-mapping="pathname"
+    data-strict="0"
+    data-reactions-enabled="1"
+    data-emit-metadata="0"
+    data-input-position="bottom"
+    data-theme="preferred_color_scheme"
+    data-lang="en"
+    crossorigin="anonymous"
+    async>
+    </script>
+
+  <!-- Synchronize Giscus theme with palette -->
+  <script>
+    var giscus = document.querySelector("script[src*=giscus]")
+
+    /* Set palette on initial load */
+    var palette = __md_get("__palette")
+    if (palette && typeof palette.color === "object") {
+      var theme = palette.color.scheme === "slate" ? "dark" : "light"
+      giscus.setAttribute("data-theme", theme) 
+    }
+
+    /* Register event handlers after documented loaded */
+    document.addEventListener("DOMContentLoaded", function() {
+      var ref = document.querySelector("[data-md-component=palette]")
+      ref.addEventListener("change", function() {
+        var palette = __md_get("__palette")
+        if (palette && typeof palette.color === "object") {
+          var theme = palette.color.scheme === "slate" ? "dark" : "light"
+
+          /* Instruct Giscus to change theme */
+          var frame = document.querySelector(".giscus-frame")
+          frame.contentWindow.postMessage(
+            { giscus: { setConfig: { theme } } },
+            "https://giscus.app"
+          )
+        }
+      })
+    })
+  </script>
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/williambdean" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://www.linkedin.com/in/williambdean/" target="_blank" rel="noopener" title="www.linkedin.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M416 32H31.9C14.3 32 0 46.5 0 64.3v383.4C0 465.5 14.3 480 31.9 480H416c17.6 0 32-14.5 32-32.3V64.3c0-17.8-14.4-32.3-32-32.3M135.4 416H69V202.2h66.5V416zM102.2 96a38.5 38.5 0 1 1 0 77 38.5 38.5 0 1 1 0-77m282.1 320h-66.4V312c0-24.8-.5-56.7-34.5-56.7-34.6 0-39.9 27-39.9 54.9V416h-66.4V202.2h63.7v29.2h.9c8.9-16.8 30.6-34.5 62.9-34.5 67.2 0 79.7 44.3 79.7 101.9z"/></svg>
+    </a>
+  
+    
+    
+    
+    
+    <a href="/feed_rss_created.xml" target="_blank" rel="noopener" title="" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M0 64c0-17.7 14.3-32 32-32 229.8 0 416 186.2 416 416 0 17.7-14.3 32-32 32s-32-14.3-32-32C384 253.6 226.4 96 32 96 14.3 96 0 81.7 0 64m0 352a64 64 0 1 1 128 0 64 64 0 1 1-128 0m32-256c159.1 0 288 128.9 288 288 0 17.7-14.3 32-32 32s-32-14.3-32-32c0-123.7-100.3-224-224-224-17.7 0-32-14.3-32-32s14.3-32 32-32"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "../../../..", "features": ["navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.expand", "navigation.top"], "search": "../../../../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../../assets/javascripts/bundle.f55a23d4.min.js"></script>
+      
+        <script src="../../../../javascripts/mathjax.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>
